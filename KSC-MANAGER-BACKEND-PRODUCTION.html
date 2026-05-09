@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KSC Manager Backend - Production</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --ksc-primary: #3d2817;
+            --ksc-secondary: #6d5742;
+            --ksc-accent: #d4c6b8;
+            --ksc-light: #eee4db;
+            --bg-cream: #f5f0ea;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-cream);
+            color: var(--ksc-primary);
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, var(--ksc-primary) 0%, #2a1a0f 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo-section { display: flex; align-items: center; gap: 1rem; }
+        .logo-circle {
+            width: 56px; height: 56px; background: white; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 300; font-size: 1rem; color: var(--ksc-primary); letter-spacing: 3px;
+        }
+        .app-title h1 { font-size: 1.5rem; font-weight: 600; }
+        .app-title p { font-size: 0.875rem; opacity: 0.9; }
+        .user-info { display: flex; align-items: center; gap: 1rem; }
+        .user-avatar {
+            width: 40px; height: 40px; background: rgba(255,255,255,0.2);
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; font-weight: 600;
+        }
+        .container { display: flex; min-height: calc(100vh - 84px); }
+        .sidebar {
+            width: 260px; background: white; border-right: 1px solid #e7e5e4;
+            padding: 1.5rem 0;
+        }
+        .menu-item {
+            padding: 0.875rem 1.5rem; cursor: pointer; transition: all 0.2s;
+            display: flex; align-items: center; gap: 0.75rem;
+            font-size: 0.9375rem; color: var(--ksc-secondary);
+        }
+        .menu-item:hover { background: var(--ksc-light); color: var(--ksc-primary); }
+        .menu-item.active { background: var(--ksc-primary); color: white; font-weight: 600; }
+        .menu-icon { font-size: 1.25rem; width: 24px; }
+        .main-content { flex: 1; padding: 2rem; overflow-y: auto; }
+        .page-header {
+            display: flex; justify-content: space-between;
+            align-items: center; margin-bottom: 2rem;
+        }
+        .page-title { font-size: 1.75rem; font-weight: 600; color: var(--ksc-primary); }
+        .btn-group { display: flex; gap: 0.75rem; }
+        .btn {
+            padding: 0.625rem 1.25rem; border: none; border-radius: 6px;
+            font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-primary { background: var(--ksc-primary); color: white; }
+        .btn-primary:hover { background: #2a1a0f; }
+        .btn-secondary {
+            background: white; color: var(--ksc-primary);
+            border: 1px solid #e7e5e4;
+        }
+        .btn-secondary:hover { background: var(--ksc-light); }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem; margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: white; border-radius: 12px; padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .stat-label {
+            font-size: 0.875rem; color: var(--ksc-secondary); margin-bottom: 0.5rem;
+        }
+        .stat-value { font-size: 2rem; font-weight: 600; color: var(--ksc-primary); }
+        .stat-change { font-size: 0.8125rem; margin-top: 0.5rem; }
+        .stat-change.positive { color: #16a34a; }
+        .stat-change.negative { color: #dc2626; }
+        .card {
+            background: white; border-radius: 12px; padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 1.5rem;
+        }
+        .card-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 1.5rem; padding-bottom: 1rem;
+            border-bottom: 2px solid var(--ksc-light);
+        }
+        .card-title { font-size: 1.25rem; font-weight: 600; color: var(--ksc-primary); }
+        .filter-bar {
+            display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+        }
+        .filter-select {
+            padding: 0.625rem 1rem; border: 1px solid #e7e5e4;
+            border-radius: 6px; font-size: 0.875rem; background: white; cursor: pointer;
+        }
+        .search-input {
+            padding: 0.625rem 1rem; border: 1px solid #e7e5e4;
+            border-radius: 6px; font-size: 0.875rem; flex: 1; min-width: 200px;
+        }
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        thead { background: var(--ksc-light); }
+        th {
+            padding: 0.875rem 1rem; text-align: left; font-weight: 600;
+            color: var(--ksc-primary); cursor: pointer; user-select: none;
+        }
+        th:hover { background: var(--ksc-accent); }
+        td { padding: 0.875rem 1rem; border-bottom: 1px solid #e7e5e4; }
+        tbody tr:hover { background: var(--ksc-light); }
+        .badge {
+            display: inline-block; padding: 0.25rem 0.75rem; border-radius: 12px;
+            font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+        }
+        .badge-open { background: #fee2e2; color: #991b1b; }
+        .badge-closed { background: #d1fae5; color: #065f46; }
+        .badge-pending { background: #fef3c7; color: #92400e; }
+        .badge-high { background: #fee2e2; color: #991b1b; }
+        .badge-medium { background: #fef3c7; color: #92400e; }
+        .badge-low { background: #dbeafe; color: #1e40af; }
+        .action-btn {
+            padding: 0.375rem 0.75rem; background: transparent;
+            border: 1px solid #e7e5e4; border-radius: 4px;
+            font-size: 0.8125rem; cursor: pointer; transition: all 0.2s;
+            margin-right: 0.5rem;
+        }
+        .action-btn:hover {
+            background: var(--ksc-primary); color: white; border-color: var(--ksc-primary);
+        }
+        .page { display: none; }
+        .page.active { display: block; }
+        .modal {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.5);
+            z-index: 1000; align-items: center; justify-content: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: white; border-radius: 12px; padding: 2rem;
+            max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;
+        }
+        .modal-header {
+            font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem;
+            color: var(--ksc-primary);
+        }
+        .form-group { margin-bottom: 1.25rem; }
+        .form-label {
+            display: block; font-size: 0.875rem; font-weight: 500;
+            margin-bottom: 0.5rem; color: var(--ksc-secondary);
+        }
+        .form-input, .form-select, .form-textarea {
+            width: 100%; padding: 0.75rem; border: 1px solid #e7e5e4;
+            border-radius: 6px; font-size: 0.875rem; font-family: inherit;
+        }
+        .form-textarea { min-height: 100px; resize: vertical; }
+        .modal-footer {
+            display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem;
+        }
+        .loading {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3); display: none; align-items: center;
+            justify-content: center; z-index: 2000;
+        }
+        .loading.active { display: flex; }
+        .spinner {
+            width: 50px; height: 50px; border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--ksc-primary); border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <header class="header">
+        <div class="logo-section">
+            <div class="logo-circle">KSC</div>
+            <div class="app-title">
+                <h1>Manager Backend</h1>
+                <p>Production WHS Management System</p>
+            </div>
+        </div>
+        <div class="user-info">
+            <div>
+                <div style="font-weight:600;font-size:0.875rem;">Safety Manager</div>
+                <div style="font-size:0.75rem;opacity:0.8;">natalieking@kingstrategiesconsulting.com</div>
+            </div>
+            <div class="user-avatar">NK</div>
+        </div>
+    </header>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="menu-item active" onclick="showPage('dashboard')">
+                <span class="menu-icon">📊</span> Dashboard
+            </div>
+            <div class="menu-item" onclick="showPage('incidents')">
+                <span class="menu-icon">📝</span> Incidents
+            </div>
+            <div class="menu-item" onclick="showPage('hazards')">
+                <span class="menu-icon">⚠️</span> Hazards
+            </div>
+            <div class="menu-item" onclick="showPage('corrective')">
+                <span class="menu-icon">✓</span> Corrective Actions
+            </div>
+            <div class="menu-item" onclick="showPage('swms')">
+                <span class="menu-icon">📋</span> SWMS Library
+            </div>
+            <div class="menu-item" onclick="showPage('inspections')">
+                <span class="menu-icon">🔍</span> Inspections
+            </div>
+            <div class="menu-item" onclick="showPage('workerscomp')">
+                <span class="menu-icon">🏥</span> Workers Comp
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <!-- DASHBOARD -->
+            <div id="page-dashboard" class="page active">
+                <div class="page-header">
+                    <h1 class="page-title">Dashboard</h1>
+                    <div class="btn-group">
+                        <select class="filter-select" id="dashboard-client">
+                            <option value="">All Clients</option>
+                        </select>
+                        <button class="btn btn-secondary" onclick="refreshDashboard()">Refresh</button>
+                    </div>
+                </div>
+                <div class="stats-grid" id="stats-grid"></div>
+                <div class="card">
+                    <div class="card-header"><h2 class="card-title">Recent Activity</h2></div>
+                    <div class="table-container"><table id="recent-activity-table"></table></div>
+                </div>
+            </div>
+
+            <!-- INCIDENTS -->
+            <div id="page-incidents" class="page">
+                <div class="page-header">
+                    <h1 class="page-title">Incidents Register</h1>
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" onclick="exportToPDF('incidents')">Export PDF</button>
+                        <button class="btn btn-primary" onclick="showNewIncidentModal()">+ New Incident</button>
+                    </div>
+                </div>
+                <div class="filter-bar">
+                    <input type="text" class="search-input" placeholder="Search..." onkeyup="filterIncidents()">
+                    <select class="filter-select" id="incidents-status-filter" onchange="filterIncidents()">
+                        <option value="">All Statuses</option>
+                        <option value="Open">Open</option>
+                        <option value="Investigating">Investigating</option>
+                        <option value="Closed">Closed</option>
+                    </select>
+                    <select class="filter-select" id="incidents-client-filter" onchange="filterIncidents()">
+                        <option value="">All Clients</option>
+                    </select>
+                </div>
+                <div class="card">
+                    <div class="table-container"><table id="incidents-table"></table></div>
+                </div>
+            </div>
+
+            <!-- HAZARDS -->
+            <div id="page-hazards" class="page">
+                <div class="page-header">
+                    <h1 class="page-title">Hazards Register</h1>
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" onclick="exportToPDF('hazards')">Export PDF</button>
+                        <button class="btn btn-primary" onclick="showNewHazardModal()">+ New Hazard</button>
+                    </div>
+                </div>
+                <div class="filter-bar">
+                    <input type="text" class="search-input" placeholder="Search..." onkeyup="filterHazards()">
+                    <select class="filter-select" id="hazards-risk-filter" onchange="filterHazards()">
+                        <option value="">All Risk Levels</option>
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                        <option value="Extreme">Extreme</option>
+                    </select>
+                </div>
+                <div class="card">
+                    <div class="table-container"><table id="hazards-table"></table></div>
+                </div>
+            </div>
+
+            <!-- CORRECTIVE ACTIONS -->
+            <div id="page-corrective" class="page">
+                <div class="page-header">
+                    <h1 class="page-title">Corrective Actions</h1>
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" onclick="exportToPDF('actions')">Export PDF</button>
+                        <button class="btn btn-primary" onclick="showNewActionModal()">+ New Action</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="table-container"><table id="actions-table"></table></div>
+                </div>
+            </div>
+
+            <!-- SWMS LIBRARY -->
+            <div id="page-swms" class="page">
+                <div class="page-header">
+                    <h1 class="page-title">SWMS Library</h1>
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" onclick="uploadSWMS()">Upload SWMS</button>
+                        <button class="btn btn-primary" onclick="createNewSWMS()">+ Create New</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="table-container"><table id="swms-table"></table></div>
+                </div>
+            </div>
+
+            <!-- INSPECTIONS -->
+            <div id="page-inspections" class="page">
+                <div class="page-header">
+                    <h1 class="page-title">Site Inspections</h1>
+                    <button class="btn btn-secondary" onclick="exportToPDF('inspections')">Export PDF</button>
+                </div>
+                <div class="card">
+                    <div class="table-container"><table id="inspections-table"></table></div>
+                </div>
+            </div>
+
+            <!-- WORKERS COMP -->
+            <div id="page-workerscomp" class="page">
+                <div class="page-header">
+                    <h1 class="page-title">Workers Compensation</h1>
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" onclick="exportToPDF('workerscomp')">Export PDF</button>
+                        <button class="btn btn-primary" onclick="showNewClaimModal()">+ New Claim</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="table-container"><table id="workerscomp-table"></table></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL -->
+    <div id="modal" class="modal">
+        <div class="modal-content" id="modal-content"></div>
+    </div>
+
+    <script>
+        // ===== CONFIGURATION =====
+        const GOOGLE_SCRIPT_URL = 'YOUR_GOOGLE_SCRIPT_URL_HERE';
+        
+        // ===== STATE =====
+        let allData = {
+            incidents: [],
+            hazards: [],
+            actions: [],
+            swms: [],
+            inspections: [],
+            workerscomp: [],
+            take5: [],
+            feedback: []
+        };
+
+        // ===== INIT =====
+        window.onload = function() {
+            loadAllData();
+        };
+
+        // ===== DATA LOADING =====
+        function showLoading() {
+            document.getElementById('loading').classList.add('active');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').classList.remove('active');
+        }
+
+        async function loadAllData() {
+            showLoading();
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL + '?action=getAllData');
+                const data = await response.json();
+                allData = data;
+                renderDashboard();
+                renderAllTables();
+                populateFilters();
+            } catch(error) {
+                console.error('Error loading data:', error);
+                alert('Error connecting to Google Sheets. Please check your configuration.');
+            }
+            hideLoading();
+        }
+
+        function refreshDashboard() {
+            loadAllData();
+        }
+
+        // ===== NAVIGATION =====
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('page-' + pageId).classList.add('active');
+            document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+            event.target.closest('.menu-item').classList.add('active');
+        }
+
+        // ===== DASHBOARD =====
+        function renderDashboard() {
+            const openIncidents = allData.incidents.filter(i => i.Status === 'Open').length;
+            const highRiskHazards = allData.hazards.filter(h => h.RiskLevel === 'High' || h.RiskLevel === 'Extreme').length;
+            const overdueActions = allData.actions.filter(a => new Date(a.DueDate) < new Date() && a.Status !== 'Completed').length;
+            const inspections30d = allData.inspections.filter(i => {
+                const date = new Date(i.Date);
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                return date > thirtyDaysAgo;
+            }).length;
+
+            document.getElementById('stats-grid').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-label">Open Incidents</div>
+                    <div class="stat-value">${openIncidents}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">High Risk Hazards</div>
+                    <div class="stat-value">${highRiskHazards}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Overdue Actions</div>
+                    <div class="stat-value">${overdueActions}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Inspections (30d)</div>
+                    <div class="stat-value">${inspections30d}</div>
+                </div>
+            `;
+
+            // Recent activity
+            const recent = [
+                ...allData.incidents.slice(0, 3).map(i => ({type: 'Incident', desc: i.Description, client: i.Client, date: i.DateIncident})),
+                ...allData.hazards.slice(0, 2).map(h => ({type: 'Hazard', desc: h.Description, client: h.Client, date: h.Date}))
+            ].slice(0, 5);
+
+            let html = '<thead><tr><th>Date</th><th>Type</th><th>Description</th><th>Client</th></tr></thead><tbody>';
+            recent.forEach(r => {
+                html += `<tr><td>${r.date}</td><td>${r.type}</td><td>${r.desc}</td><td>${r.client}</td></tr>`;
+            });
+            html += '</tbody>';
+            document.getElementById('recent-activity-table').innerHTML = html;
+        }
+
+        // ===== RENDER TABLES =====
+        function renderAllTables() {
+            renderIncidentsTable();
+            renderHazardsTable();
+            renderActionsTable();
+            renderSWMSTable();
+            renderInspectionsTable();
+            renderWorkersCompTable();
+        }
+
+        function renderIncidentsTable() {
+            let html = `
+                <thead><tr>
+                    <th>ID</th><th>Date</th><th>Type</th><th>Description</th>
+                    <th>Worker</th><th>Injury?</th><th>Client</th><th>Status</th><th>Actions</th>
+                </tr></thead><tbody>
+            `;
+            allData.incidents.forEach(inc => {
+                html += `<tr>
+                    <td>${inc.IncidentID}</td>
+                    <td>${inc.DateIncident}</td>
+                    <td>${inc.Type}</td>
+                    <td>${inc.Description}</td>
+                    <td>${inc.Worker}</td>
+                    <td>${inc.Injury}</td>
+                    <td>${inc.Client}</td>
+                    <td><span class="badge badge-${inc.Status.toLowerCase()}">${inc.Status}</span></td>
+                    <td>
+                        <button class="action-btn" onclick="viewIncident('${inc.IncidentID}')">View</button>
+                        <button class="action-btn" onclick="investigateIncident('${inc.IncidentID}')">Investigate</button>
+                    </td>
+                </tr>`;
+            });
+            html += '</tbody>';
+            document.getElementById('incidents-table').innerHTML = html;
+        }
+
+        function renderHazardsTable() {
+            let html = `
+                <thead><tr>
+                    <th>ID</th><th>Date</th><th>Location</th><th>Type</th>
+                    <th>Description</th><th>Risk</th><th>Client</th><th>Status</th><th>Actions</th>
+                </tr></thead><tbody>
+            `;
+            allData.hazards.forEach(haz => {
+                html += `<tr>
+                    <td>${haz.HazardID}</td>
+                    <td>${haz.Date}</td>
+                    <td>${haz.Location}</td>
+                    <td>${haz.Type}</td>
+                    <td>${haz.Description}</td>
+                    <td><span class="badge badge-${haz.RiskLevel.toLowerCase()}">${haz.RiskLevel}</span></td>
+                    <td>${haz.Client}</td>
+                    <td><span class="badge badge-${haz.Status.toLowerCase()}">${haz.Status}</span></td>
+                    <td>
+                        <button class="action-btn" onclick="viewHazard('${haz.HazardID}')">View</button>
+                        <button class="action-btn" onclick="createActionFromHazard('${haz.HazardID}')">Action</button>
+                    </td>
+                </tr>`;
+            });
+            html += '</tbody>';
+            document.getElementById('hazards-table').innerHTML = html;
+        }
+
+        function renderActionsTable() {
+            let html = `
+                <thead><tr>
+                    <th>ID</th><th>Raised</th><th>Source</th><th>Description</th>
+                    <th>Assigned</th><th>Due</th><th>Priority</th><th>Status</th><th>Actions</th>
+                </tr></thead><tbody>
+            `;
+            allData.actions.forEach(act => {
+                html += `<tr>
+                    <td>${act.ActionID}</td>
+                    <td>${act.DateRaised}</td>
+                    <td>${act.Source}</td>
+                    <td>${act.Description}</td>
+                    <td>${act.AssignedTo}</td>
+                    <td>${act.DueDate}</td>
+                    <td><span class="badge badge-${act.Priority.toLowerCase()}">${act.Priority}</span></td>
+                    <td><span class="badge badge-${act.Status.toLowerCase()}">${act.Status}</span></td>
+                    <td>
+                        <button class="action-btn" onclick="completeAction('${act.ActionID}')">Complete</button>
+                        <button class="action-btn" onclick="editAction('${act.ActionID}')">Edit</button>
+                    </td>
+                </tr>`;
+            });
+            html += '</tbody>';
+            document.getElementById('actions-table').innerHTML = html;
+        }
+
+        function renderSWMSTable() {
+            let html = `
+                <thead><tr>
+                    <th>ID</th><th>Task</th><th>Risk</th><th>Version</th>
+                    <th>Updated</th><th>Sign-Offs</th><th>Client</th><th>Status</th><th>Actions</th>
+                </tr></thead><tbody>
+            `;
+            allData.swms.forEach(swms => {
+                html += `<tr>
+                    <td>${swms.SWMSID}</td>
+                    <td>${swms.TaskName}</td>
+                    <td><span class="badge badge-${swms.RiskLevel.toLowerCase()}">${swms.RiskLevel}</span></td>
+                    <td>${swms.Version}</td>
+                    <td>${swms.LastUpdated}</td>
+                    <td>${swms.SignOffs || 0}</td>
+                    <td>${swms.Client}</td>
+                    <td><span class="badge badge-${swms.Status.toLowerCase()}">${swms.Status}</span></td>
+                    <td>
+                        <button class="action-btn" onclick="viewSWMS('${swms.SWMSID}')">View</button>
+                        <button class="action-btn" onclick="editSWMS('${swms.SWMSID}')">Edit</button>
+                        <button class="action-btn" onclick="viewSignOffs('${swms.SWMSID}')">Sign-offs</button>
+                    </td>
+                </tr>`;
+            });
+            html += '</tbody>';
+            document.getElementById('swms-table').innerHTML = html;
+        }
+
+        function renderInspectionsTable() {
+            let html = `
+                <thead><tr>
+                    <th>ID</th><th>Date</th><th>Type</th><th>Inspector</th>
+                    <th>Site</th><th>Pass Rate</th><th>NCRs</th><th>Client</th><th>Actions</th>
+                </tr></thead><tbody>
+            `;
+            allData.inspections.forEach(insp => {
+                html += `<tr>
+                    <td>${insp.InspectionID}</td>
+                    <td>${insp.Date}</td>
+                    <td>${insp.Type}</td>
+                    <td>${insp.Inspector}</td>
+                    <td>${insp.Site}</td>
+                    <td>${insp.PassRate}</td>
+                    <td>${insp.FailCount}</td>
+                    <td>${insp.Client}</td>
+                    <td>
+                        <button class="action-btn" onclick="viewInspection('${insp.InspectionID}')">View</button>
+                        <button class="action-btn" onclick="generateInspectionReport('${insp.InspectionID}')">Report</button>
+                    </td>
+                </tr>`;
+            });
+            html += '</tbody>';
+            document.getElementById('inspections-table').innerHTML = html;
+        }
+
+        function renderWorkersCompTable() {
+            let html = `
+                <thead><tr>
+                    <th>Claim#</th><th>Incident</th><th>Worker</th><th>Lodged</th>
+                    <th>Injury</th><th>Days Off</th><th>Target RTW</th><th>Client</th><th>Status</th><th>Actions</th>
+                </tr></thead><tbody>
+            `;
+            allData.workerscomp.forEach(wc => {
+                html += `<tr>
+                    <td>${wc.ClaimNumber}</td>
+                    <td>${wc.IncidentID}</td>
+                    <td>${wc.Worker}</td>
+                    <td>${wc.DateLodged}</td>
+                    <td>${wc.InjuryType}</td>
+                    <td>${wc.DaysOffWork || 0}</td>
+                    <td>${wc.TargetRTW || 'N/A'}</td>
+                    <td>${wc.Client}</td>
+                    <td><span class="badge badge-${wc.Status.toLowerCase()}">${wc.Status}</span></td>
+                    <td>
+                        <button class="action-btn" onclick="viewClaim('${wc.ClaimNumber}')">View</button>
+                        <button class="action-btn" onclick="managRTW('${wc.ClaimNumber}')">RTW Plan</button>
+                    </td>
+                </tr>`;
+            });
+            html += '</tbody>';
+            document.getElementById('workerscomp-table').innerHTML = html;
+        }
+
+        // ===== FILTERS =====
+        function populateFilters() {
+            const clients = [...new Set(allData.incidents.map(i => i.Client))];
+            ['dashboard-client', 'incidents-client-filter'].forEach(id => {
+                const select = document.getElementById(id);
+                if(select) {
+                    clients.forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c;
+                        opt.textContent = c;
+                        select.appendChild(opt);
+                    });
+                }
+            });
+        }
+
+        function filterIncidents() {
+            // Filtering logic here
+        }
+
+        function filterHazards() {
+            // Filtering logic here
+        }
+
+        // ===== ACTION FUNCTIONS =====
+        function viewIncident(id) {
+            const inc = allData.incidents.find(i => i.IncidentID === id);
+            if(inc) {
+                showModal(`
+                    <div class="modal-header">Incident Details: ${id}</div>
+                    <div class="form-group"><strong>Date:</strong> ${inc.DateIncident}</div>
+                    <div class="form-group"><strong>Type:</strong> ${inc.Type}</div>
+                    <div class="form-group"><strong>Worker:</strong> ${inc.Worker}</div>
+                    <div class="form-group"><strong>Description:</strong> ${inc.Description}</div>
+                    <div class="form-group"><strong>Actions Taken:</strong> ${inc.ActionsTaken}</div>
+                    <div class="form-group"><strong>Injury:</strong> ${inc.Injury}</div>
+                    <div class="form-group"><strong>Status:</strong> ${inc.Status}</div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+                    </div>
+                `);
+            }
+        }
+
+        function investigateIncident(id) {
+            alert(`Opening ICAM Investigation for ${id}\n\nThis would launch the full investigation workflow with:\n- Timeline builder\n- Contributing factors analysis\n- Root cause identification\n- Recommendations`);
+        }
+
+        function viewHazard(id) {
+            const haz = allData.hazards.find(h => h.HazardID === id);
+            if(haz) {
+                showModal(`
+                    <div class="modal-header">Hazard Details: ${id}</div>
+                    <div class="form-group"><strong>Location:</strong> ${haz.Location}</div>
+                    <div class="form-group"><strong>Type:</strong> ${haz.Type}</div>
+                    <div class="form-group"><strong>Risk Level:</strong> ${haz.RiskLevel}</div>
+                    <div class="form-group"><strong>Description:</strong> ${haz.Description}</div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+                    </div>
+                `);
+            }
+        }
+
+        async function completeAction(id) {
+            if(confirm(`Mark action ${id} as complete?`)) {
+                showLoading();
+                try {
+                    await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: 'completeAction', actionId: id })
+                    });
+                    alert('Action completed!');
+                    loadAllData();
+                } catch(error) {
+                    alert('Error completing action');
+                }
+                hideLoading();
+            }
+        }
+
+        function viewSWMS(id) {
+            alert(`Viewing SWMS ${id}\n\nWould display full SWMS document with:\n- Risk assessment\n- Control measures\n- PPE requirements\n- Emergency procedures`);
+        }
+
+        function viewSignOffs(id) {
+            alert(`Viewing sign-offs for SWMS ${id}\n\nWould show:\n- All worker sign-offs\n- Dates/times\n- Digital signatures\n- Site conditions\n- GPS locations`);
+        }
+
+        function viewInspection(id) {
+            alert(`Viewing inspection ${id}\n\nWould display:\n- Full checklist\n- Photos\n- Inspector notes\n- Actions raised`);
+        }
+
+        function generateInspectionReport(id) {
+            alert(`Generating PDF report for inspection ${id}...`);
+        }
+
+        function viewClaim(id) {
+            alert(`Viewing workers comp claim ${id}\n\nWould show:\n- Claim details\n- Medical certificates\n- Work capacity\n- RTW progress`);
+        }
+
+        function manageRTW(id) {
+            alert(`Opening RTW Plan for ${id}\n\nWould include:\n- Current capacity\n- Suitable duties\n- Gradual increase plan\n- Review dates`);
+        }
+
+        // ===== NEW MODALS =====
+        function showNewIncidentModal() {
+            alert('New Incident form would open here');
+        }
+
+        function showNewHazardModal() {
+            alert('New Hazard form would open here');
+        }
+
+        function showNewActionModal() {
+            alert('New Corrective Action form would open here');
+        }
+
+        function showNewClaimModal() {
+            alert('New Workers Comp claim form would open here');
+        }
+
+        function createNewSWMS() {
+            alert('SWMS Builder would open here');
+        }
+
+        function uploadSWMS() {
+            alert('Upload SWMS document');
+        }
+
+        // ===== PDF EXPORT =====
+        async function exportToPDF(type) {
+            showLoading();
+            alert(`Generating PDF export for ${type}...`);
+            hideLoading();
+        }
+
+        // ===== MODAL =====
+        function showModal(content) {
+            document.getElementById('modal-content').innerHTML = content;
+            document.getElementById('modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('modal')) {
+                closeModal();
+            }
+        };
+    </script>
+</body>
+</html>
