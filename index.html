@@ -1209,7 +1209,8 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('icamModal')">Cancel</button>
-                <button class="btn btn-success" onclick="saveICAMInvestigation()">Save Investigation</button>
+                <button class="btn btn-success" onclick="saveICAMInvestigation()">💾 Save Investigation</button>
+                <button class="btn btn-primary" onclick="exportICAMPDF()">📄 Export PDF</button>
             </div>
         </div>
     </div>
@@ -2298,6 +2299,7 @@ tbody.innerHTML = allData.incidents.map(inc => `
             initializeNotes();
             initializeHazardNotes();
             initializeActionNotes();
+            initializeICAMData();
             loadData();
             setDefaultDates();
         });
@@ -2377,11 +2379,25 @@ tbody.innerHTML = allData.incidents.map(inc => `
 
         // MODAL MANAGEMENT
         function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('active');
+            console.log('Closing modal:', modalId);
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('active');
+                console.log('Modal closed:', modalId);
+            } else {
+                console.error('Modal not found:', modalId);
+            }
         }
 
         function showModal(modalId) {
-            document.getElementById(modalId).classList.add('active');
+            console.log('Opening modal:', modalId);
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('active');
+                console.log('Modal opened:', modalId, 'classList:', modal.classList);
+            } else {
+                console.error('Modal not found:', modalId);
+            }
         }
 
         // DASHBOARD
@@ -2720,11 +2736,6 @@ tbody.innerHTML = allData.incidents.map(inc => `
         }
 
         // ICAM INVESTIGATION
-        function showICAMModal(incidentId) {
-            currentIncidentForICAM = incidentId;
-            showModal('icamModal');
-        }
-
         function switchICAMTab(tabName) {
             // Hide all tabs
             document.querySelectorAll('#icamModal .tab-content').forEach(content => {
@@ -2861,10 +2872,222 @@ tbody.innerHTML = allData.incidents.map(inc => `
             if (element) element.remove();
         }
 
+        // ========================================
+        // ICAM INVESTIGATION SAVE/LOAD SYSTEM
+        // ========================================
+        
+        let icamInvestigations = {}; // Store ICAM data by incident ID
+        
+        // Initialize ICAM data from localStorage
+        function initializeICAMData() {
+            const saved = localStorage.getItem('ksc_icam_investigations');
+            if (saved) icamInvestigations = JSON.parse(saved);
+        }
+        
+        function showICAMModal(incidentId) {
+            console.log('showICAMModal called with:', incidentId);
+            currentIncidentForICAM = String(incidentId);
+            
+            // Load existing ICAM data if available
+            const existingICAM = icamInvestigations[currentIncidentForICAM];
+            if (existingICAM) {
+                loadICAMData(existingICAM);
+            } else {
+                clearICAMForm();
+            }
+            
+            showModal('icamModal');
+        }
+        
+        function loadICAMData(icamData) {
+            // Load problem statement
+            if (icamData.problemStatement) {
+                document.getElementById('problemStatement').value = icamData.problemStatement;
+            }
+            
+            // Load 5 whys
+            if (icamData.why1) document.getElementById('why1').value = icamData.why1;
+            if (icamData.why2) document.getElementById('why2').value = icamData.why2;
+            if (icamData.why3) document.getElementById('why3').value = icamData.why3;
+            if (icamData.why4) document.getElementById('why4').value = icamData.why4;
+            if (icamData.why5) document.getElementById('why5').value = icamData.why5;
+            
+            // Load contributing factors checkboxes
+            if (icamData.factors) {
+                icamData.factors.forEach((factorId, index) => {
+                    const checkbox = document.getElementById(`factor${index + 1}`);
+                    if (checkbox) checkbox.checked = true;
+                });
+            }
+            
+            // Note: Timeline events, evidence, and recommendations are dynamic
+            // and would need more complex loading - simplified for now
+        }
+        
+        function clearICAMForm() {
+            // Clear problem statement
+            const problemStatement = document.getElementById('problemStatement');
+            if (problemStatement) problemStatement.value = '';
+            
+            // Clear 5 whys
+            document.getElementById('why1').value = '';
+            document.getElementById('why2').value = '';
+            document.getElementById('why3').value = '';
+            document.getElementById('why4').value = '';
+            document.getElementById('why5').value = '';
+            
+            // Uncheck all contributing factors
+            for (let i = 1; i <= 17; i++) {
+                const checkbox = document.getElementById(`factor${i}`);
+                if (checkbox) checkbox.checked = false;
+            }
+        }
+
         async function saveICAMInvestigation() {
+            if (!currentIncidentForICAM) return;
+            
+            // Collect all ICAM data
+            const icamData = {
+                incidentId: currentIncidentForICAM,
+                savedDate: new Date().toISOString(),
+                
+                // Problem statement and 5 whys
+                problemStatement: document.getElementById('problemStatement').value || '',
+                why1: document.getElementById('why1').value || '',
+                why2: document.getElementById('why2').value || '',
+                why3: document.getElementById('why3').value || '',
+                why4: document.getElementById('why4').value || '',
+                why5: document.getElementById('why5').value || '',
+                
+                // Contributing factors
+                factors: []
+            };
+            
+            // Collect checked contributing factors
+            for (let i = 1; i <= 17; i++) {
+                const checkbox = document.getElementById(`factor${i}`);
+                if (checkbox && checkbox.checked) {
+                    icamData.factors.push(i);
+                }
+            }
+            
+            // Save to localStorage
+            icamInvestigations[currentIncidentForICAM] = icamData;
+            localStorage.setItem('ksc_icam_investigations', JSON.stringify(icamInvestigations));
+            
             showAlert('ICAM investigation saved successfully!', 'success');
             closeModal('icamModal');
-            // In production, this would save all ICAM data to Google Sheets
+        }
+        
+        function exportICAMPDF() {
+            if (!currentIncidentForICAM) return;
+            
+            if (!window.jspdf) {
+                showAlert('PDF library is still loading. Please try again in a moment.', 'warning');
+                return;
+            }
+            
+            const icamData = icamInvestigations[currentIncidentForICAM];
+            if (!icamData) {
+                showAlert('No ICAM investigation data to export. Please save first.', 'warning');
+                return;
+            }
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Header
+            doc.setFillColor(61, 40, 23);
+            doc.rect(0, 0, 210, 40, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(20);
+            doc.text('ICAM INVESTIGATION', 105, 15, { align: 'center' });
+            doc.setFontSize(12);
+            doc.text('King Strategies Consulting', 105, 25, { align: 'center' });
+            doc.text(currentIncidentForICAM, 105, 32, { align: 'center' });
+            
+            let yPos = 50;
+            
+            // Problem Statement
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(14);
+            doc.text('PROBLEM STATEMENT', 20, yPos);
+            yPos += 8;
+            
+            doc.setFontSize(10);
+            const problemLines = doc.splitTextToSize(icamData.problemStatement || 'Not specified', 170);
+            doc.text(problemLines, 20, yPos);
+            yPos += (problemLines.length * 5) + 10;
+            
+            // 5 Whys Analysis
+            doc.setFontSize(14);
+            doc.text('5 WHYS ANALYSIS', 20, yPos);
+            yPos += 8;
+            
+            doc.setFontSize(10);
+            if (icamData.why1) {
+                doc.text(`Why 1: ${icamData.why1}`, 20, yPos);
+                yPos += 6;
+            }
+            if (icamData.why2) {
+                doc.text(`Why 2: ${icamData.why2}`, 20, yPos);
+                yPos += 6;
+            }
+            if (icamData.why3) {
+                doc.text(`Why 3: ${icamData.why3}`, 20, yPos);
+                yPos += 6;
+            }
+            if (icamData.why4) {
+                doc.text(`Why 4: ${icamData.why4}`, 20, yPos);
+                yPos += 6;
+            }
+            if (icamData.why5) {
+                doc.setFont(undefined, 'bold');
+                doc.text(`ROOT CAUSE: ${icamData.why5}`, 20, yPos);
+                doc.setFont(undefined, 'normal');
+                yPos += 10;
+            }
+            
+            // Contributing Factors
+            if (icamData.factors && icamData.factors.length > 0) {
+                if (yPos > 250) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+                
+                doc.setFontSize(14);
+                doc.text('CONTRIBUTING FACTORS', 20, yPos);
+                yPos += 8;
+                
+                doc.setFontSize(10);
+                const factorNames = {
+                    1: 'Equipment/Tools',
+                    2: 'Training/Competence',
+                    3: 'Procedures',
+                    4: 'Communication',
+                    5: 'Supervision',
+                    6: 'Work Environment',
+                    7: 'PPE',
+                    8: 'Fatigue',
+                    9: 'Time Pressure',
+                    10: 'Maintenance',
+                    11: 'Design',
+                    12: 'Hazard Identification',
+                    13: 'Risk Assessment',
+                    14: 'Change Management',
+                    15: 'Organizational Culture',
+                    16: 'Resources',
+                    17: 'External Factors'
+                };
+                
+                icamData.factors.forEach(factorId => {
+                    doc.text(`• ${factorNames[factorId]}`, 20, yPos);
+                    yPos += 5;
+                });
+            }
+            
+            doc.save(`ICAM-${currentIncidentForICAM}.pdf`);
+            showAlert('ICAM investigation exported to PDF!', 'success');
         }
 
         // WORKERS COMP FUNCTIONS
