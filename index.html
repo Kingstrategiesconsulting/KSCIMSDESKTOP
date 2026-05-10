@@ -2765,13 +2765,14 @@ tbody.innerHTML = allData.incidents.map(inc => `
             claimData['Total Claim Cost'] = (weeklyBenefits + medicalCosts).toString();
 
             try {
+                // Use URL-encoded form data to avoid CORS preflight
+                const formData = new URLSearchParams();
+                formData.append('action', 'submitWorkersComp');
+                formData.append('data', JSON.stringify(claimData));
+                
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'submitWorkersComp',
-                        data: claimData
-                    })
+                    body: formData
                 });
 
                 if (!response.ok) throw new Error('Failed to submit claim');
@@ -2856,13 +2857,14 @@ tbody.innerHTML = allData.incidents.map(inc => `
             };
 
             try {
+                // Use URL-encoded form data to avoid CORS preflight
+                const formData = new URLSearchParams();
+                formData.append('action', 'submitHazard');
+                formData.append('data', JSON.stringify(hazardData));
+                
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'submitHazard',
-                        data: hazardData
-                    })
+                    body: formData
                 });
 
                 if (!response.ok) throw new Error('Failed to submit hazard');
@@ -2904,13 +2906,14 @@ tbody.innerHTML = allData.incidents.map(inc => `
             };
 
             try {
+                // Use URL-encoded form data to avoid CORS preflight
+                const formData = new URLSearchParams();
+                formData.append('action', 'submitAction');
+                formData.append('data', JSON.stringify(actionData));
+                
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'submitCorrectiveAction',
-                        data: actionData
-                    })
+                    body: formData
                 });
 
                 if (!response.ok) throw new Error('Failed to submit action');
