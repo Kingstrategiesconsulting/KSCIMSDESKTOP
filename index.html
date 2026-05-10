@@ -1435,6 +1435,110 @@
         </div>
     </div>
 
+    <!-- HAZARD DETAIL MODAL -->
+    <div id="hazardDetailModal" class="modal">
+        <div class="modal-content" style="max-width: 1000px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="hazardDetailTitle">Hazard Details</h2>
+                <button class="modal-close" onclick="closeModal('hazardDetailModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <!-- HAZARD SUMMARY -->
+                <div class="detail-section">
+                    <div class="detail-title">Hazard Summary</div>
+                    <div class="detail-grid" id="hazardDetailSummary">
+                        <!-- Summary will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- STATUS SELECTOR -->
+                <div class="status-selector">
+                    <label for="hazardStatusDropdown">Hazard Status</label>
+                    <select class="status-dropdown" id="hazardStatusDropdown" onchange="updateHazardStatus()">
+                        <option value="Open">Open</option>
+                        <option value="Under Review">Under Review</option>
+                        <option value="Controls Implemented">Controls Implemented</option>
+                        <option value="Closed">Closed</option>
+                    </select>
+                </div>
+
+                <!-- NOTES SYSTEM -->
+                <div class="notes-section">
+                    <div class="notes-header">
+                        <div class="notes-title">💬 Action Notes</div>
+                    </div>
+                    <div class="note-input-group">
+                        <input type="text" class="note-input" id="hazardNewNote" 
+                               placeholder="Add action notes..." 
+                               onkeypress="if(event.key==='Enter') addHazardNote()">
+                        <button class="btn btn-primary btn-sm" onclick="addHazardNote()">Add Note</button>
+                    </div>
+                    <div class="notes-list" id="hazardNotesList">
+                        <div style="text-align: center; color: #6d5742; padding: 2rem;">
+                            No notes yet. Add your first note above.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('hazardDetailModal')">Close</button>
+                <button class="btn btn-success" onclick="exportHazardPDF()">📄 Export PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CORRECTIVE ACTION DETAIL MODAL -->
+    <div id="actionDetailModal" class="modal">
+        <div class="modal-content" style="max-width: 1000px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="actionDetailTitle">Corrective Action Details</h2>
+                <button class="modal-close" onclick="closeModal('actionDetailModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <!-- ACTION SUMMARY -->
+                <div class="detail-section">
+                    <div class="detail-title">Action Summary</div>
+                    <div class="detail-grid" id="actionDetailSummary">
+                        <!-- Summary will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- STATUS SELECTOR -->
+                <div class="status-selector">
+                    <label for="actionStatusDropdown">Action Status</label>
+                    <select class="status-dropdown" id="actionStatusDropdown" onchange="updateActionStatus()">
+                        <option value="Not Started">Not Started</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Overdue">Overdue</option>
+                    </select>
+                </div>
+
+                <!-- NOTES SYSTEM -->
+                <div class="notes-section">
+                    <div class="notes-header">
+                        <div class="notes-title">💬 Progress Notes</div>
+                    </div>
+                    <div class="note-input-group">
+                        <input type="text" class="note-input" id="actionNewNote" 
+                               placeholder="Add progress notes..." 
+                               onkeypress="if(event.key==='Enter') addActionNote()">
+                        <button class="btn btn-primary btn-sm" onclick="addActionNote()">Add Note</button>
+                    </div>
+                    <div class="notes-list" id="actionNotesList">
+                        <div style="text-align: center; color: #6d5742; padding: 2rem;">
+                            No notes yet. Add your first note above.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('actionDetailModal')">Close</button>
+                <button class="btn btn-success" onclick="exportActionPDF()">📄 Export PDF</button>
+            </div>
+        </div>
+    </div>
+
     <!-- CREATE HAZARD MODAL -->
     <div id="createHazardModal" class="modal">
         <div class="modal-content">
@@ -2191,6 +2295,9 @@ tbody.innerHTML = allData.incidents.map(inc => `
 
         // INITIALIZE
         document.addEventListener('DOMContentLoaded', function() {
+            initializeNotes();
+            initializeHazardNotes();
+            initializeActionNotes();
             loadData();
             setDefaultDates();
         });
@@ -2208,10 +2315,14 @@ tbody.innerHTML = allData.incidents.map(inc => `
         // DATA LOADING
         async function loadData() {
             try {
+                console.log('Loading data from:', GOOGLE_SCRIPT_URL);
                 const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getAllData`);
                 if (!response.ok) throw new Error('Network response was not ok');
                 
                 const data = await response.json();
+                console.log('Raw data from Google Sheets:', data);
+                console.log('Workers Comp data specifically:', data.workerscomp);
+                
                 allData = data;
                 
                 updateDashboard();
@@ -2445,7 +2556,9 @@ tbody.innerHTML = allData.incidents.map(inc => `
         function updateWorkersCompTable() {
             const tbody = document.getElementById('workerscompTableBody');
             
-            if (allData.workerscomp.length === 0) {
+            console.log('Updating Workers Comp table with data:', allData.workerscomp);
+            
+            if (!allData.workerscomp || allData.workerscomp.length === 0) {
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="8" class="empty-state">
@@ -2458,9 +2571,13 @@ tbody.innerHTML = allData.incidents.map(inc => `
                 return;
             }
 
-            tbody.innerHTML = allData.workerscomp.map(claim => `
-                <tr onclick="viewWorkersCompDetail('${claim.ClaimNumber || claim['Claim Number']}')" style="cursor: pointer;">
-                    <td><strong>${claim.ClaimNumber || claim['Claim Number'] || 'N/A'}</strong></td>
+            tbody.innerHTML = allData.workerscomp.map(claim => {
+                const claimNum = claim.ClaimNumber || claim['Claim Number'];
+                console.log('Creating row for claim:', claimNum, 'Type:', typeof claimNum);
+                
+                return `
+                <tr onclick="viewWorkersCompDetail('${claimNum}')" style="cursor: pointer;">
+                    <td><strong>${claimNum || 'N/A'}</strong></td>
                     <td>${claim.InjuredWorker || claim['Injured Worker'] || 'N/A'}</td>
                     <td>${formatDate(claim.DateOfInjury || claim['Date of Injury'])}</td>
                     <td>${claim.BodyPart || claim['Body Part'] || 'N/A'}</td>
@@ -2468,11 +2585,12 @@ tbody.innerHTML = allData.incidents.map(inc => `
                     <td>${claim.DaysLost || claim['Days Lost'] || '0'}</td>
                     <td>$${parseFloat(claim.TotalClaimCost || claim['Total Claim Cost'] || 0).toLocaleString()}</td>
                     <td>
-                        <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); viewWorkersCompDetail('${claim.ClaimNumber || claim['Claim Number']}')">View</button>
-                        <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); showRTWPlanModal('${claim.ClaimNumber || claim['Claim Number']}')" style="margin-left: 0.5rem;">RTW Plan</button>
+                        <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); viewWorkersCompDetail('${claimNum}')">View</button>
+                        <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); showRTWPlanModal('${claimNum}')" style="margin-left: 0.5rem;">RTW Plan</button>
                     </td>
                 </tr>
-            `).join('');
+                `;
+            }).join('');
         }
 
         function updateSWMSTable() {
@@ -3131,8 +3249,460 @@ tbody.innerHTML = allData.incidents.map(inc => `
             }
         }
 
+        // ========================================
+        // HAZARD DETAIL VIEW SYSTEM
+        // ========================================
+        
+        let currentHazardId = null;
+        let hazardNotes = {}; // Store notes by hazard ID
+        
+        // Initialize hazard notes from localStorage
+        function initializeHazardNotes() {
+            const saved = localStorage.getItem('ksc_hazard_notes');
+            if (saved) hazardNotes = JSON.parse(saved);
+        }
+        
         function viewHazard(hazardId) {
-            showAlert('View hazard details: ' + hazardId, 'info');
+            const hazard = allData.hazards.find(h => 
+                String(h['Hazard ID'] || h.HazardID) === String(hazardId)
+            );
+            
+            if (!hazard) {
+                showAlert('Hazard not found', 'danger');
+                return;
+            }
+            
+            currentHazardId = String(hazardId);
+            
+            document.getElementById('hazardDetailTitle').textContent = 
+                `Hazard: ${hazardId}`;
+            
+            const summary = document.getElementById('hazardDetailSummary');
+            summary.innerHTML = `
+                <div class="detail-item">
+                    <div class="detail-label">Hazard ID</div>
+                    <div class="detail-value">${hazard['Hazard ID'] || hazard.HazardID}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Date Identified</div>
+                    <div class="detail-value">${formatDate(hazard.Date)}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Location</div>
+                    <div class="detail-value">${hazard.Location || 'N/A'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Hazard Type</div>
+                    <div class="detail-value">${hazard['Hazard Type'] || hazard.HazardType || 'N/A'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Risk Rating</div>
+                    <div class="detail-value"><span class="badge ${getRiskBadgeClass(hazard['Risk Rating'] || hazard.RiskRating)}">${hazard['Risk Rating'] || hazard.RiskRating || 'N/A'}</span></div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Reporter</div>
+                    <div class="detail-value">${hazard['Reporter Name'] || hazard.ReporterName || 'N/A'}</div>
+                </div>
+                <div class="detail-item" style="grid-column: 1 / -1;">
+                    <div class="detail-label">Hazard Description</div>
+                    <div class="detail-value">${hazard['Hazard Description'] || hazard.HazardDescription || 'N/A'}</div>
+                </div>
+                <div class="detail-item" style="grid-column: 1 / -1;">
+                    <div class="detail-label">Recommended Controls</div>
+                    <div class="detail-value">${hazard['Recommended Controls'] || hazard.RecommendedControls || 'N/A'}</div>
+                </div>
+            `;
+            
+            const currentStatus = hazard.Status || 'Open';
+            document.getElementById('hazardStatusDropdown').value = currentStatus;
+            
+            renderHazardNotes(hazardId);
+            showModal('hazardDetailModal');
+        }
+        
+        function renderHazardNotes(hazardId) {
+            const notesList = document.getElementById('hazardNotesList');
+            const notes = hazardNotes[hazardId] || [];
+            
+            if (notes.length === 0) {
+                notesList.innerHTML = `
+                    <div style="text-align: center; color: #6d5742; padding: 2rem;">
+                        No notes yet. Add your first note above.
+                    </div>
+                `;
+                return;
+            }
+            
+            notesList.innerHTML = notes.map(note => `
+                <div class="note-item">
+                    <div class="note-meta">
+                        <span>${note.author || 'WHS Manager'}</span>
+                        <span>${formatDateTime(note.timestamp)}</span>
+                    </div>
+                    <div class="note-text">${escapeHtml(note.text)}</div>
+                </div>
+            `).join('');
+        }
+        
+        function addHazardNote() {
+            const input = document.getElementById('hazardNewNote');
+            const text = input.value.trim();
+            
+            if (!text || !currentHazardId) return;
+            
+            if (!hazardNotes[currentHazardId]) {
+                hazardNotes[currentHazardId] = [];
+            }
+            
+            hazardNotes[currentHazardId].unshift({
+                text: text,
+                timestamp: new Date().toISOString(),
+                author: 'WHS Manager'
+            });
+            
+            localStorage.setItem('ksc_hazard_notes', JSON.stringify(hazardNotes));
+            input.value = '';
+            renderHazardNotes(currentHazardId);
+        }
+        
+        function updateHazardStatus() {
+            if (!currentHazardId) return;
+            
+            const newStatus = document.getElementById('hazardStatusDropdown').value;
+            
+            const hazardIndex = allData.hazards.findIndex(h => 
+                String(h['Hazard ID'] || h.HazardID) === String(currentHazardId)
+            );
+            
+            if (hazardIndex >= 0) {
+                allData.hazards[hazardIndex].Status = newStatus;
+            }
+            
+            if (!hazardNotes[currentHazardId]) {
+                hazardNotes[currentHazardId] = [];
+            }
+            
+            hazardNotes[currentHazardId].unshift({
+                text: `Status changed to: ${newStatus}`,
+                timestamp: new Date().toISOString(),
+                author: 'System'
+            });
+            
+            localStorage.setItem('ksc_hazard_notes', JSON.stringify(hazardNotes));
+            renderHazardNotes(currentHazardId);
+            updateHazardsTable();
+            showAlert('Status updated successfully!', 'success');
+        }
+        
+        function exportHazardPDF() {
+            if (!currentHazardId) return;
+            
+            if (!window.jspdf) {
+                showAlert('PDF library is still loading. Please try again in a moment.', 'warning');
+                return;
+            }
+            
+            const hazard = allData.hazards.find(h => 
+                String(h['Hazard ID'] || h.HazardID) === String(currentHazardId)
+            );
+            
+            if (!hazard) return;
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Header
+            doc.setFillColor(61, 40, 23);
+            doc.rect(0, 0, 210, 40, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(20);
+            doc.text('HAZARD REPORT', 105, 15, { align: 'center' });
+            doc.setFontSize(12);
+            doc.text('King Strategies Consulting', 105, 25, { align: 'center' });
+            doc.text(currentHazardId, 105, 32, { align: 'center' });
+            
+            let yPos = 50;
+            
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(14);
+            doc.text('HAZARD DETAILS', 20, yPos);
+            yPos += 8;
+            
+            doc.setFontSize(10);
+            doc.text(`Date Identified: ${formatDate(hazard.Date)}`, 20, yPos);
+            yPos += 6;
+            doc.text(`Location: ${hazard.Location || 'N/A'}`, 20, yPos);
+            yPos += 6;
+            doc.text(`Risk Rating: ${hazard['Risk Rating'] || hazard.RiskRating || 'N/A'}`, 20, yPos);
+            yPos += 6;
+            doc.text(`Status: ${hazard.Status || 'Open'}`, 20, yPos);
+            yPos += 12;
+            
+            doc.setFontSize(12);
+            doc.text('Description:', 20, yPos);
+            yPos += 6;
+            doc.setFontSize(9);
+            const descLines = doc.splitTextToSize(hazard['Hazard Description'] || hazard.HazardDescription || 'N/A', 170);
+            doc.text(descLines, 20, yPos);
+            yPos += (descLines.length * 5) + 8;
+            
+            doc.setFontSize(12);
+            doc.text('Recommended Controls:', 20, yPos);
+            yPos += 6;
+            doc.setFontSize(9);
+            const controlLines = doc.splitTextToSize(hazard['Recommended Controls'] || hazard.RecommendedControls || 'N/A', 170);
+            doc.text(controlLines, 20, yPos);
+            yPos += (controlLines.length * 5) + 12;
+            
+            const notes = hazardNotes[currentHazardId] || [];
+            if (notes.length > 0) {
+                if (yPos > 250) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+                
+                doc.setFontSize(14);
+                doc.text('ACTION NOTES', 20, yPos);
+                yPos += 8;
+                
+                doc.setFontSize(9);
+                notes.slice(0, 10).forEach(note => {
+                    if (yPos > 270) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+                    doc.text(`${formatDateTime(note.timestamp)} - ${note.author}:`, 20, yPos);
+                    yPos += 5;
+                    const noteLines = doc.splitTextToSize(note.text, 170);
+                    doc.text(noteLines, 25, yPos);
+                    yPos += (noteLines.length * 5) + 3;
+                });
+            }
+            
+            doc.save(`Hazard-${currentHazardId}.pdf`);
+            showAlert('PDF exported successfully!', 'success');
+        }
+        
+        // ========================================
+        // CORRECTIVE ACTION DETAIL VIEW SYSTEM
+        // ========================================
+        
+        let currentActionId = null;
+        let actionNotes = {}; // Store notes by action ID
+        
+        // Initialize action notes from localStorage
+        function initializeActionNotes() {
+            const saved = localStorage.getItem('ksc_action_notes');
+            if (saved) actionNotes = JSON.parse(saved);
+        }
+        
+        function viewAction(actionId) {
+            const action = allData.actions.find(a => 
+                String(a['Action ID'] || a.ActionID) === String(actionId)
+            );
+            
+            if (!action) {
+                showAlert('Action not found', 'danger');
+                return;
+            }
+            
+            currentActionId = String(actionId);
+            
+            document.getElementById('actionDetailTitle').textContent = 
+                `Corrective Action: ${actionId}`;
+            
+            const summary = document.getElementById('actionDetailSummary');
+            summary.innerHTML = `
+                <div class="detail-item">
+                    <div class="detail-label">Action ID</div>
+                    <div class="detail-value">${action['Action ID'] || action.ActionID}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Priority</div>
+                    <div class="detail-value"><span class="priority-${(action.Priority || '').toLowerCase()}">${action.Priority || 'N/A'}</span></div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Due Date</div>
+                    <div class="detail-value">${formatDate(action['Due Date'] || action.DueDate)}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Responsible Person</div>
+                    <div class="detail-value">${action['Responsible Person'] || action.ResponsiblePerson || 'N/A'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Source</div>
+                    <div class="detail-value">${action['Source Type'] || action.SourceType || 'N/A'}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Created Date</div>
+                    <div class="detail-value">${formatDate(action['Created Date'] || action.CreatedDate)}</div>
+                </div>
+                <div class="detail-item" style="grid-column: 1 / -1;">
+                    <div class="detail-label">Action Description</div>
+                    <div class="detail-value">${action['Action Description'] || action.ActionDescription || 'N/A'}</div>
+                </div>
+            `;
+            
+            const currentStatus = action.Status || 'Not Started';
+            document.getElementById('actionStatusDropdown').value = currentStatus;
+            
+            renderActionNotes(actionId);
+            showModal('actionDetailModal');
+        }
+        
+        function renderActionNotes(actionId) {
+            const notesList = document.getElementById('actionNotesList');
+            const notes = actionNotes[actionId] || [];
+            
+            if (notes.length === 0) {
+                notesList.innerHTML = `
+                    <div style="text-align: center; color: #6d5742; padding: 2rem;">
+                        No notes yet. Add your first note above.
+                    </div>
+                `;
+                return;
+            }
+            
+            notesList.innerHTML = notes.map(note => `
+                <div class="note-item">
+                    <div class="note-meta">
+                        <span>${note.author || 'WHS Manager'}</span>
+                        <span>${formatDateTime(note.timestamp)}</span>
+                    </div>
+                    <div class="note-text">${escapeHtml(note.text)}</div>
+                </div>
+            `).join('');
+        }
+        
+        function addActionNote() {
+            const input = document.getElementById('actionNewNote');
+            const text = input.value.trim();
+            
+            if (!text || !currentActionId) return;
+            
+            if (!actionNotes[currentActionId]) {
+                actionNotes[currentActionId] = [];
+            }
+            
+            actionNotes[currentActionId].unshift({
+                text: text,
+                timestamp: new Date().toISOString(),
+                author: 'WHS Manager'
+            });
+            
+            localStorage.setItem('ksc_action_notes', JSON.stringify(actionNotes));
+            input.value = '';
+            renderActionNotes(currentActionId);
+        }
+        
+        function updateActionStatus() {
+            if (!currentActionId) return;
+            
+            const newStatus = document.getElementById('actionStatusDropdown').value;
+            
+            const actionIndex = allData.actions.findIndex(a => 
+                String(a['Action ID'] || a.ActionID) === String(currentActionId)
+            );
+            
+            if (actionIndex >= 0) {
+                allData.actions[actionIndex].Status = newStatus;
+            }
+            
+            if (!actionNotes[currentActionId]) {
+                actionNotes[currentActionId] = [];
+            }
+            
+            actionNotes[currentActionId].unshift({
+                text: `Status changed to: ${newStatus}`,
+                timestamp: new Date().toISOString(),
+                author: 'System'
+            });
+            
+            localStorage.setItem('ksc_action_notes', JSON.stringify(actionNotes));
+            renderActionNotes(currentActionId);
+            updateActionsTable();
+            showAlert('Status updated successfully!', 'success');
+        }
+        
+        function exportActionPDF() {
+            if (!currentActionId) return;
+            
+            if (!window.jspdf) {
+                showAlert('PDF library is still loading. Please try again in a moment.', 'warning');
+                return;
+            }
+            
+            const action = allData.actions.find(a => 
+                String(a['Action ID'] || a.ActionID) === String(currentActionId)
+            );
+            
+            if (!action) return;
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Header
+            doc.setFillColor(61, 40, 23);
+            doc.rect(0, 0, 210, 40, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(20);
+            doc.text('CORRECTIVE ACTION', 105, 15, { align: 'center' });
+            doc.setFontSize(12);
+            doc.text('King Strategies Consulting', 105, 25, { align: 'center' });
+            doc.text(currentActionId, 105, 32, { align: 'center' });
+            
+            let yPos = 50;
+            
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(14);
+            doc.text('ACTION DETAILS', 20, yPos);
+            yPos += 8;
+            
+            doc.setFontSize(10);
+            doc.text(`Priority: ${action.Priority || 'N/A'}`, 20, yPos);
+            yPos += 6;
+            doc.text(`Due Date: ${formatDate(action['Due Date'] || action.DueDate)}`, 20, yPos);
+            yPos += 6;
+            doc.text(`Responsible: ${action['Responsible Person'] || action.ResponsiblePerson || 'N/A'}`, 20, yPos);
+            yPos += 6;
+            doc.text(`Status: ${action.Status || 'Not Started'}`, 20, yPos);
+            yPos += 12;
+            
+            doc.setFontSize(12);
+            doc.text('Description:', 20, yPos);
+            yPos += 6;
+            doc.setFontSize(9);
+            const descLines = doc.splitTextToSize(action['Action Description'] || action.ActionDescription || 'N/A', 170);
+            doc.text(descLines, 20, yPos);
+            yPos += (descLines.length * 5) + 12;
+            
+            const notes = actionNotes[currentActionId] || [];
+            if (notes.length > 0) {
+                if (yPos > 250) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+                
+                doc.setFontSize(14);
+                doc.text('PROGRESS NOTES', 20, yPos);
+                yPos += 8;
+                
+                doc.setFontSize(9);
+                notes.slice(0, 10).forEach(note => {
+                    if (yPos > 270) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+                    doc.text(`${formatDateTime(note.timestamp)} - ${note.author}:`, 20, yPos);
+                    yPos += 5;
+                    const noteLines = doc.splitTextToSize(note.text, 170);
+                    doc.text(noteLines, 25, yPos);
+                    yPos += (noteLines.length * 5) + 3;
+                });
+            }
+            
+            doc.save(`Action-${currentActionId}.pdf`);
+            showAlert('PDF exported successfully!', 'success');
         }
 
         // ACTION FUNCTIONS
@@ -3178,10 +3748,6 @@ tbody.innerHTML = allData.incidents.map(inc => `
                 console.error('Error:', error);
                 showAlert('Error creating action. Please try again.', 'danger');
             }
-        }
-
-        function viewAction(actionId) {
-            showAlert('View action details: ' + actionId, 'info');
         }
 
         // SWMS FUNCTIONS
