@@ -1451,6 +1451,568 @@
 
         let currentIncidentForICAM = null;
         let currentClaimForRTW = null;
+        // ========================================
+// WORKERS COMP & INCIDENT DETAIL VIEWS
+// Paste this inside your existing <script> tag
+// Add AFTER your existing global variables
+// ========================================
+
+// Global variables for detail views
+let currentWCClaim = null;
+let currentIncidentId = null;
+let wcNotes = {}; // Store notes by claim number
+let incidentNotes = {}; // Store notes by incident ID
+
+// Initialize notes from localStorage
+function initializeNotes() {
+    const savedWCNotes = localStorage.getItem('ksc_wc_notes');
+    const savedIncNotes = localStorage.getItem('ksc_incident_notes');
+    if (savedWCNotes) wcNotes = JSON.parse(savedWCNotes);
+    if (savedIncNotes) incidentNotes = JSON.parse(savedIncNotes);
+}
+
+// Call this when page loads (add to your DOMContentLoaded)
+document.addEventListener('DOMContentLoaded', function() {
+    initializeNotes();
+    // Your existing initialization code...
+});
+
+// ========================================
+// WORKERS COMP DETAIL VIEW
+// ========================================
+
+function viewWorkersCompDetail(claimNumber) {
+    // Find the claim in allData
+    const claim = allData.workerscomp.find(c => 
+        (c['Claim Number'] || c.ClaimNumber) === claimNumber
+    );
+    
+    if (!claim) {
+        showAlert('Claim not found', 'danger');
+        return;
+    }
+    
+    currentWCClaim = claim;
+    
+    // Update modal title
+    document.getElementById('wcDetailTitle').textContent = 
+        `Workers Comp Claim: ${claimNumber}`;
+    
+    // Populate summary
+    const summary = document.getElementById('wcDetailSummary');
+    summary.innerHTML = `
+        <div class="detail-item">
+            <div class="detail-label">Claim Number</div>
+            <div class="detail-value">${claim['Claim Number'] || claim.ClaimNumber}</div>
+        </div>
+        <div class="detail-item">
+            <div class="detail-label">Injured Worker</div>
+            <div class="detail-value">${claim['Injured Worker'] || claim.InjuredWorker || 'N/A'}</div>
+        </div>
+        <div class="detail-item">
+            <div class="detail-label">Date of Injury</div>
+            <div class="detail-value">${formatDate(claim['Date of Injury'] || claim.DateOfInjury)}</div>
+        </div>
+        <div class="detail-item">
+            <div class="detail-label">Body Part</div>
+            <div class="detail-value">${claim['Body Part'] || claim.BodyPart || 'N/A'}</div>
+        </div>
+        <div class="detail-item">
+            <div class="detail-label">Nature of Injury</div>
+            <div class="detail-value">${claim['Nature of Injury'] || claim.NatureOfInjury || 'N/A'}</div>
+        </div>
+        <div class="detail-item">
+            <div class="detail-label">Days Lost</div>
+            <div class="detail-value">${claim['Days Lost'] || claim.DaysLost || '0'} days</div>
+        </div>
+        <div class="detail-item">
+            <div class="detail-label">Weekly Benefits</div>
+            <div class="detail-value">$${parseFloat(claim['Weekly Benefits'] || claim.WeeklyBenefits || 0).toLocaleString()}</div>
+        </div>
+        <div class="detail-item">
+            <div class="detail-label">Medical Costs</div>
+            <div class="detail-value">$${parseFloat(claim['Medical Costs'] || claim.MedicalCosts || 0).toLocaleString()}</div>
+        </div>
+        <div class="detail-item">
+            <div class="detail-label">Total Claim Cost</div>
+            <div class="detail-value">$${parseFloat(claim['Total Claim Cost'] || claim.TotalClaimCost || 0).toLocaleString()}</div>
+        </div>
+        <div class="detail-item">
+            <div class="detail-label">Claim Lodged Date</div>
+            <div class="detail-value">${formatDate(claim['Claim Lodged Date'] || claim.ClaimLodgedDate)}</div>
+        </div>
+    `;
+    
+    // Set status dropdown
+    const currentStatus = claim['Claim Status'] || claim.ClaimStatus || 'Lodged';
+    document.getElementById('wcStatusDropdown').value = currentStatus;
+    
+    // Render notes
+    renderWCNotes(claimNumber);
+    
+    // Show modal
+    showModal('workersCompDetailModal');
+}
+
+function renderWCNotes(claimNumber) {
+    const notesList = document.getElementById('wcNotesList');
+    const notes = wcNotes[claimNumber] || [];
+    
+    if (notes.length === 0) {
+        notesList.innerHTML = `
+            <div style="text-align: center; color: #6d5742; padding: 2rem;">
+                No notes yet. Add your first note above.
+            </div>
+        `;
+        return;
+    }
+    
+    notesList.innerHTML = notes.map(note => `
+        <div class="note-item">
+            <div class="note-meta">
+                <span>${note.author || 'WHS Manager'}</span>
+                <span>${formatDateTime(note.timestamp)}</span>
+            </div>
+            <div class="note-text">${escapeHtml(note.text)}</div>
+        </div>
+    `).join('');
+}
+
+function addWCNote() {
+    const input = document.getElementById('wcNewNote');
+    const text = input.value.trim();
+    
+    if (!text || !currentWCClaim) return;
+    
+    const claimNumber = currentWCClaim['Claim Number'] || currentWCClaim.ClaimNumber;
+    
+    if (!wcNotes[claimNumber]) {
+        wcNotes[claimNumber] = [];
+    }
+    
+    wcNotes[claimNumber].unshift({
+        text: text,
+        timestamp: new Date().toISOString(),
+        author: 'WHS Manager'
+    });
+    
+    localStorage.setItem('ksc_wc_notes', JSON.stringify(wcNotes));
+    input.value = '';
+    renderWCNotes(claimNumber);
+}
+
+function updateWCStatus() {
+    if (!currentWCClaim) return;
+    
+    const newStatus = document.getElementById('wcStatusDropdown').value;
+    const claimNumber = currentWCClaim['Claim Number'] || currentWCClaim.ClaimNumber;
+    
+    // Update in allData
+    const claimIndex = allData.workerscomp.findIndex(c => 
+        (c['Claim Number'] || c.ClaimNumber) === claimNumber
+    );
+    
+    if (claimIndex >= 0) {
+        allData.workerscomp[claimIndex]['Claim Status'] = newStatus;
+        allData.workerscomp[claimIndex].ClaimStatus = newStatus;
+    }
+    
+    // Add automatic note
+    if (!wcNotes[claimNumber]) {
+        wcNotes[claimNumber] = [];
+    }
+    
+    wcNotes[claimNumber].unshift({
+        text: `Status changed to: ${newStatus}`,
+        timestamp: new Date().toISOString(),
+        author: 'System'
+    });
+    
+    localStorage.setItem('ksc_wc_notes', JSON.stringify(wcNotes));
+    renderWCNotes(claimNumber);
+    updateWorkersCompTable();
+    showAlert('Status updated successfully!', 'success');
+}
+
+// ========================================
+// INCIDENT DETAIL VIEW
+// ========================================
+
+function viewIncidentDetail(incidentId) {
+    const incident = allData.incidents.find(inc => 
+        (inc['Incident ID'] || inc.IncidentID) === incidentId
+    );
+    
+    if (!incident) {
+        showAlert('Incident not found', 'danger');
+        return;
+    }
+    
+    currentIncidentId = incidentId;
+    
+    document.getElementById('incDetailTitle').textContent = 
+        `Incident: ${incidentId}`;
+    
+    const summary = document.getElementById('incDetailSummary');
+    summary.innerHTML = `
+        <div class="detail-item">
+            <div class="detail-label">Incident ID</div>
+            <div class="detail-value">${incident['Incident ID'] || incident.IncidentID}</div>
+        </div>
+        <div class="detail-item">
+            <div class="detail-label">Date & Time</div>
+            <div class="detail-value">${formatDate(incident.Date)} ${incident.Time || ''}</div>
+        </div>
+        <div class="detail-item">
+            <div class="detail-label">Location</div>
+            <div class="detail-value">${incident.Location || 'N/A'}</div>
+        </div>
+        <div class="detail-item">
+            <div class="detail-label">Incident Type</div>
+            <div class="detail-value">${incident['Incident Type'] || incident.Type || 'N/A'}</div>
+        </div>
+        <div class="detail-item">
+            <div class="detail-label">Was Anyone Injured?</div>
+            <div class="detail-value">${incident['Was Anyone Injured'] || incident.WasInjured || 'No'}</div>
+        </div>
+        <div class="detail-item">
+            <div class="detail-label">Injury Type</div>
+            <div class="detail-value">${incident['Injury Type'] || incident.InjuryType || 'N/A'}</div>
+        </div>
+        <div class="detail-item">
+            <div class="detail-label">Body Part</div>
+            <div class="detail-value">${incident['Body Part'] || incident.BodyPart || 'N/A'}</div>
+        </div>
+        <div class="detail-item">
+            <div class="detail-label">Nature of Injury</div>
+            <div class="detail-value">${incident['Nature of Injury'] || incident.NatureOfInjury || 'N/A'}</div>
+        </div>
+        <div class="detail-item">
+            <div class="detail-label">Reporter</div>
+            <div class="detail-value">${incident['Reporter Name'] || incident.ReporterName || 'N/A'}</div>
+        </div>
+        <div class="detail-item" style="grid-column: 1 / -1;">
+            <div class="detail-label">Description</div>
+            <div class="detail-value">${incident.Description || 'N/A'}</div>
+        </div>
+        <div class="detail-item" style="grid-column: 1 / -1;">
+            <div class="detail-label">Immediate Action Taken</div>
+            <div class="detail-value">${incident['Immediate Action Taken'] || incident.ImmediateAction || 'N/A'}</div>
+        </div>
+    `;
+    
+    const currentStatus = incident.Status || 'Open';
+    document.getElementById('incStatusDropdown').value = currentStatus;
+    
+    renderIncidentNotes(incidentId);
+    showModal('incidentDetailModal');
+}
+
+function renderIncidentNotes(incidentId) {
+    const notesList = document.getElementById('incNotesList');
+    const notes = incidentNotes[incidentId] || [];
+    
+    if (notes.length === 0) {
+        notesList.innerHTML = `
+            <div style="text-align: center; color: #6d5742; padding: 2rem;">
+                No notes yet. Add your first note above.
+            </div>
+        `;
+        return;
+    }
+    
+    notesList.innerHTML = notes.map(note => `
+        <div class="note-item">
+            <div class="note-meta">
+                <span>${note.author || 'WHS Manager'}</span>
+                <span>${formatDateTime(note.timestamp)}</span>
+            </div>
+            <div class="note-text">${escapeHtml(note.text)}</div>
+        </div>
+    `).join('');
+}
+
+function addIncidentNote() {
+    const input = document.getElementById('incNewNote');
+    const text = input.value.trim();
+    
+    if (!text || !currentIncidentId) return;
+    
+    if (!incidentNotes[currentIncidentId]) {
+        incidentNotes[currentIncidentId] = [];
+    }
+    
+    incidentNotes[currentIncidentId].unshift({
+        text: text,
+        timestamp: new Date().toISOString(),
+        author: 'WHS Manager'
+    });
+    
+    localStorage.setItem('ksc_incident_notes', JSON.stringify(incidentNotes));
+    input.value = '';
+    renderIncidentNotes(currentIncidentId);
+}
+
+function updateIncidentStatus() {
+    if (!currentIncidentId) return;
+    
+    const newStatus = document.getElementById('incStatusDropdown').value;
+    
+    const incidentIndex = allData.incidents.findIndex(inc => 
+        (inc['Incident ID'] || inc.IncidentID) === currentIncidentId
+    );
+    
+    if (incidentIndex >= 0) {
+        allData.incidents[incidentIndex].Status = newStatus;
+    }
+    
+    if (!incidentNotes[currentIncidentId]) {
+        incidentNotes[currentIncidentId] = [];
+    }
+    
+    incidentNotes[currentIncidentId].unshift({
+        text: `Status changed to: ${newStatus}`,
+        timestamp: new Date().toISOString(),
+        author: 'System'
+    });
+    
+    localStorage.setItem('ksc_incident_notes', JSON.stringify(incidentNotes));
+    renderIncidentNotes(currentIncidentId);
+    updateIncidentsTable();
+    showAlert('Status updated successfully!', 'success');
+}
+
+// ========================================
+// PDF EXPORT FUNCTIONS (NO AI)
+// ========================================
+
+function exportWCPDF() {
+    if (!currentWCClaim) return;
+    
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    const claimNumber = currentWCClaim['Claim Number'] || currentWCClaim.ClaimNumber;
+    
+    // Header
+    doc.setFillColor(61, 40, 23);
+    doc.rect(0, 0, 210, 40, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.text('WORKERS COMPENSATION CLAIM', 105, 15, { align: 'center' });
+    doc.setFontSize(12);
+    doc.text('King Strategies Consulting', 105, 25, { align: 'center' });
+    doc.text(claimNumber, 105, 32, { align: 'center' });
+    
+    let yPos = 50;
+    
+    // Claim Details
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(14);
+    doc.text('CLAIM DETAILS', 20, yPos);
+    yPos += 8;
+    
+    doc.setFontSize(10);
+    doc.text(`Worker: ${currentWCClaim['Injured Worker'] || currentWCClaim.InjuredWorker || 'N/A'}`, 20, yPos);
+    yPos += 6;
+    doc.text(`Date of Injury: ${formatDate(currentWCClaim['Date of Injury'] || currentWCClaim.DateOfInjury)}`, 20, yPos);
+    yPos += 6;
+    doc.text(`Body Part: ${currentWCClaim['Body Part'] || currentWCClaim.BodyPart || 'N/A'}`, 20, yPos);
+    yPos += 6;
+    doc.text(`Nature of Injury: ${currentWCClaim['Nature of Injury'] || currentWCClaim.NatureOfInjury || 'N/A'}`, 20, yPos);
+    yPos += 6;
+    doc.text(`Status: ${currentWCClaim['Claim Status'] || currentWCClaim.ClaimStatus || 'N/A'}`, 20, yPos);
+    yPos += 6;
+    doc.text(`Days Lost: ${currentWCClaim['Days Lost'] || currentWCClaim.DaysLost || '0'}`, 20, yPos);
+    yPos += 12;
+    
+    // Financial Details
+    doc.setFontSize(14);
+    doc.text('FINANCIAL DETAILS', 20, yPos);
+    yPos += 8;
+    
+    doc.setFontSize(10);
+    const weeklyBenefits = parseFloat(currentWCClaim['Weekly Benefits'] || currentWCClaim.WeeklyBenefits || 0);
+    const medicalCosts = parseFloat(currentWCClaim['Medical Costs'] || currentWCClaim.MedicalCosts || 0);
+    const totalCost = parseFloat(currentWCClaim['Total Claim Cost'] || currentWCClaim.TotalClaimCost || 0);
+    
+    doc.text(`Weekly Benefits: $${weeklyBenefits.toLocaleString()}`, 20, yPos);
+    yPos += 6;
+    doc.text(`Medical Costs: $${medicalCosts.toLocaleString()}`, 20, yPos);
+    yPos += 6;
+    doc.text(`Total Claim Cost: $${totalCost.toLocaleString()}`, 20, yPos);
+    yPos += 12;
+    
+    // Notes
+    const notes = wcNotes[claimNumber] || [];
+    if (notes.length > 0) {
+        doc.setFontSize(14);
+        doc.text('CASE NOTES', 20, yPos);
+        yPos += 8;
+        
+        doc.setFontSize(9);
+        notes.slice(0, 10).forEach(note => {
+            if (yPos > 270) {
+                doc.addPage();
+                yPos = 20;
+            }
+            doc.text(`${formatDateTime(note.timestamp)} - ${note.author}:`, 20, yPos);
+            yPos += 5;
+            const noteLines = doc.splitTextToSize(note.text, 170);
+            doc.text(noteLines, 25, yPos);
+            yPos += (noteLines.length * 5) + 3;
+        });
+    }
+    
+    doc.save(`WC-Claim-${claimNumber}.pdf`);
+    showAlert('PDF exported successfully!', 'success');
+}
+
+function exportIncidentPDF() {
+    if (!currentIncidentId) return;
+    
+    const incident = allData.incidents.find(inc => 
+        (inc['Incident ID'] || inc.IncidentID) === currentIncidentId
+    );
+    
+    if (!incident) return;
+    
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFillColor(61, 40, 23);
+    doc.rect(0, 0, 210, 40, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.text('INCIDENT REPORT', 105, 15, { align: 'center' });
+    doc.setFontSize(12);
+    doc.text('King Strategies Consulting', 105, 25, { align: 'center' });
+    doc.text(currentIncidentId, 105, 32, { align: 'center' });
+    
+    let yPos = 50;
+    
+    // Incident Details
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(14);
+    doc.text('INCIDENT DETAILS', 20, yPos);
+    yPos += 8;
+    
+    doc.setFontSize(10);
+    doc.text(`Date: ${formatDate(incident.Date)}`, 20, yPos);
+    yPos += 6;
+    doc.text(`Time: ${incident.Time || 'N/A'}`, 20, yPos);
+    yPos += 6;
+    doc.text(`Location: ${incident.Location || 'N/A'}`, 20, yPos);
+    yPos += 6;
+    doc.text(`Type: ${incident['Incident Type'] || incident.Type || 'N/A'}`, 20, yPos);
+    yPos += 6;
+    doc.text(`Injury: ${incident['Was Anyone Injured'] || incident.WasInjured || 'No'}`, 20, yPos);
+    yPos += 6;
+    doc.text(`Status: ${incident.Status || 'Open'}`, 20, yPos);
+    yPos += 12;
+    
+    // Description
+    doc.setFontSize(14);
+    doc.text('DESCRIPTION', 20, yPos);
+    yPos += 8;
+    
+    doc.setFontSize(10);
+    const descLines = doc.splitTextToSize(incident.Description || 'N/A', 170);
+    doc.text(descLines, 20, yPos);
+    yPos += (descLines.length * 5) + 8;
+    
+    // Actions
+    if (incident['Immediate Action Taken'] || incident.ImmediateAction) {
+        doc.setFontSize(14);
+        doc.text('IMMEDIATE ACTIONS TAKEN', 20, yPos);
+        yPos += 8;
+        
+        doc.setFontSize(10);
+        const actionLines = doc.splitTextToSize(incident['Immediate Action Taken'] || incident.ImmediateAction, 170);
+        doc.text(actionLines, 20, yPos);
+        yPos += (actionLines.length * 5) + 8;
+    }
+    
+    // Notes
+    const notes = incidentNotes[currentIncidentId] || [];
+    if (notes.length > 0) {
+        if (yPos > 250) {
+            doc.addPage();
+            yPos = 20;
+        }
+        
+        doc.setFontSize(14);
+        doc.text('INVESTIGATION NOTES', 20, yPos);
+        yPos += 8;
+        
+        doc.setFontSize(9);
+        notes.slice(0, 10).forEach(note => {
+            if (yPos > 270) {
+                doc.addPage();
+                yPos = 20;
+            }
+            doc.text(`${formatDateTime(note.timestamp)} - ${note.author}:`, 20, yPos);
+            yPos += 5;
+            const noteLines = doc.splitTextToSize(note.text, 170);
+            doc.text(noteLines, 25, yPos);
+            yPos += (noteLines.length * 5) + 3;
+        });
+    }
+    
+    doc.save(`Incident-${currentIncidentId}.pdf`);
+    showAlert('PDF exported successfully!', 'success');
+}
+
+// ========================================
+// HELPER FUNCTIONS
+// ========================================
+
+function formatDateTime(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-AU', { 
+        day: '2-digit', 
+        month: 'short', 
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// ========================================
+// UPDATE YOUR EXISTING TABLE FUNCTIONS
+// Add onclick handlers to table rows
+// ========================================
+
+// MODIFY your updateWorkersCompTable function
+// Change the tbody.innerHTML line to add onclick:
+
+/*
+tbody.innerHTML = allData.workerscomp.map(claim => `
+    <tr onclick="viewWorkersCompDetail('${claim.ClaimNumber || claim['Claim Number']}')">
+        <td><strong>${claim.ClaimNumber || claim['Claim Number'] || 'N/A'}</strong></td>
+        ... rest of your existing code ...
+    </tr>
+`).join('');
+*/
+
+// MODIFY your updateIncidentsTable function
+// Change the tbody.innerHTML line to add onclick:
+
+/*
+tbody.innerHTML = allData.incidents.map(inc => `
+    <tr onclick="viewIncidentDetail('${inc['Incident ID'] || inc.IncidentID}')">
+        <td><strong>${inc.IncidentID || inc['Incident ID'] || 'N/A'}</strong></td>
+        ... rest of your existing code ...
+    </tr>
+`).join('');
+*/
 
         // INITIALIZE
         document.addEventListener('DOMContentLoaded', function() {
@@ -1722,10 +2284,13 @@
 
             tbody.innerHTML = allData.workerscomp.map(claim => `
                 <tr>
-                    <td><strong>${claim.ClaimNumber || claim['Claim Number'] || 'N/A'}</strong></td>
-                    <td>${claim.InjuredWorker || claim['Injured Worker'] || 'N/A'}</td>
-                    <td>${formatDate(claim.DateOfInjury || claim['Date of Injury'])}</td>
-                    <td>${claim.BodyPart || claim['Body Part'] || 'N/A'}</td>
+                    tbody.innerHTML = allData.workerscomp.map(claim => `
+    <tr onclick="viewWorkersCompDetail('${claim['Claim Number'] || claim.ClaimNumber}')">
+        <td><strong>${claim.ClaimNumber || claim['Claim Number'] || 'N/A'}</strong></td>
+        <td>${claim.InjuredWorker || claim['Injured Worker'] || 'N/A'}</td>
+        ...rest of your code stays exactly the same...
+    </tr>
+`).join('');
                     <td><span class="badge ${getStatusBadgeClass(claim.ClaimStatus || claim['Claim Status'])}">${claim.ClaimStatus || claim['Claim Status'] || 'N/A'}</span></td>
                     <td>${claim.DaysLost || claim['Days Lost'] || '0'}</td>
                     <td>$${parseFloat(claim.TotalClaimCost || claim['Total Claim Cost'] || 0).toLocaleString()}</td>
@@ -2291,5 +2856,116 @@
             }, 3000);
         }
     </script>
+<!-- ========================================== -->
+<!-- WORKERS COMP DETAIL MODAL -->
+<!-- Paste this BEFORE your closing </body> tag -->
+<!-- ========================================== -->
+
+<div id="workersCompDetailModal" class="modal">
+    <div class="modal-content" style="max-width: 1000px;">
+        <div class="modal-header">
+            <h2 class="modal-title" id="wcDetailTitle">Workers Comp Claim Details</h2>
+            <button class="modal-close" onclick="closeModal('workersCompDetailModal')">×</button>
+        </div>
+        <div class="modal-body">
+            <!-- CLAIM SUMMARY -->
+            <div class="detail-section">
+                <div class="detail-title">Claim Summary</div>
+                <div class="detail-grid" id="wcDetailSummary">
+                    <!-- Summary will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- STATUS SELECTOR -->
+            <div class="status-selector">
+                <label for="wcStatusDropdown">Claim Status</label>
+                <select class="status-dropdown" id="wcStatusDropdown" onchange="updateWCStatus()">
+                    <option value="Lodged">Lodged</option>
+                    <option value="Active">Active</option>
+                    <option value="Monitoring">Monitoring</option>
+                    <option value="Closed">Closed</option>
+                </select>
+            </div>
+
+            <!-- NOTES SYSTEM -->
+            <div class="notes-section">
+                <div class="notes-header">
+                    <div class="notes-title">💬 Case Notes & Comments</div>
+                </div>
+                <div class="note-input-group">
+                    <input type="text" class="note-input" id="wcNewNote" 
+                           placeholder="Add a note or comment..." 
+                           onkeypress="if(event.key==='Enter') addWCNote()">
+                    <button class="btn btn-primary btn-sm" onclick="addWCNote()">Add Note</button>
+                </div>
+                <div class="notes-list" id="wcNotesList">
+                    <div style="text-align: center; color: #6d5742; padding: 2rem;">
+                        No notes yet. Add your first note above.
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('workersCompDetailModal')">Close</button>
+            <button class="btn btn-success" onclick="exportWCPDF()">📄 Export PDF</button>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- INCIDENT DETAIL MODAL -->
+<!-- Paste this BEFORE your closing </body> tag -->
+<!-- ========================================== -->
+
+<div id="incidentDetailModal" class="modal">
+    <div class="modal-content" style="max-width: 1000px;">
+        <div class="modal-header">
+            <h2 class="modal-title" id="incDetailTitle">Incident Details</h2>
+            <button class="modal-close" onclick="closeModal('incidentDetailModal')">×</button>
+        </div>
+        <div class="modal-body">
+            <!-- INCIDENT SUMMARY -->
+            <div class="detail-section">
+                <div class="detail-title">Incident Summary</div>
+                <div class="detail-grid" id="incDetailSummary">
+                    <!-- Summary will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- STATUS SELECTOR -->
+            <div class="status-selector">
+                <label for="incStatusDropdown">Incident Status</label>
+                <select class="status-dropdown" id="incStatusDropdown" onchange="updateIncidentStatus()">
+                    <option value="Open">Open</option>
+                    <option value="Investigation">Under Investigation</option>
+                    <option value="Closed">Closed</option>
+                </select>
+            </div>
+
+            <!-- NOTES SYSTEM -->
+            <div class="notes-section">
+                <div class="notes-header">
+                    <div class="notes-title">💬 Investigation Notes</div>
+                </div>
+                <div class="note-input-group">
+                    <input type="text" class="note-input" id="incNewNote" 
+                           placeholder="Add investigation notes..." 
+                           onkeypress="if(event.key==='Enter') addIncidentNote()">
+                    <button class="btn btn-primary btn-sm" onclick="addIncidentNote()">Add Note</button>
+                </div>
+                <div class="notes-list" id="incNotesList">
+                    <div style="text-align: center; color: #6d5742; padding: 2rem;">
+                        No notes yet. Add your first note above.
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('incidentDetailModal')">Close</button>
+            <button class="btn btn-primary" onclick="showICAMModal(currentIncidentId)">Launch ICAM Investigation</button>
+            <button class="btn btn-success" onclick="exportIncidentPDF()">📄 Export PDF</button>
+        </div>
+    </div>
+</div>
 </body>
 </html>
