@@ -1351,7 +1351,11 @@
                     <div class="rtw-phase">
                         <div class="rtw-phase-header">
                             <div class="rtw-phase-title">Week 1</div>
-                            <div class="rtw-hours">4 hrs/day</div>
+                            <div class="rtw-hours">
+                                <input type="number" id="rtwWeek1Hours" min="1" max="8" step="0.5" value="4" 
+                                       style="width: 60px; padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-weight: 700; font-size: 1.25rem;">
+                                <span style="margin-left: 0.5rem;">hrs/day</span>
+                            </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
@@ -1373,7 +1377,11 @@
                     <div class="rtw-phase">
                         <div class="rtw-phase-header">
                             <div class="rtw-phase-title">Week 2-3</div>
-                            <div class="rtw-hours">6 hrs/day</div>
+                            <div class="rtw-hours">
+                                <input type="number" id="rtwWeek2Hours" min="1" max="8" step="0.5" value="6" 
+                                       style="width: 60px; padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-weight: 700; font-size: 1.25rem;">
+                                <span style="margin-left: 0.5rem;">hrs/day</span>
+                            </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
@@ -1394,7 +1402,11 @@
                     <div class="rtw-phase">
                         <div class="rtw-phase-header">
                             <div class="rtw-phase-title">Week 4+</div>
-                            <div class="rtw-hours">8 hrs/day</div>
+                            <div class="rtw-hours">
+                                <input type="number" id="rtwWeek3Hours" min="1" max="8" step="0.5" value="8" 
+                                       style="width: 60px; padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-weight: 700; font-size: 1.25rem;">
+                                <span style="margin-left: 0.5rem;">hrs/day</span>
+                            </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
@@ -1417,7 +1429,8 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('rtwPlanModal')">Cancel</button>
-                <button class="btn btn-success" onclick="saveRTWPlan()">Save RTW Plan</button>
+                <button class="btn btn-primary" onclick="exportRTWPDF()">📄 Export PDF</button>
+                <button class="btn btn-success" onclick="saveRTWPlan()">💾 Save RTW Plan</button>
             </div>
         </div>
     </div>
@@ -1621,13 +1634,20 @@ document.addEventListener('DOMContentLoaded', function() {
 // ========================================
 
 function viewWorkersCompDetail(claimNumber) {
+    console.log('Looking for claim:', claimNumber);
+    console.log('All workers comp data:', allData.workerscomp);
+    
     // Find the claim in allData
-    const claim = allData.workerscomp.find(c => 
-        (c['Claim Number'] || c.ClaimNumber) === claimNumber
-    );
+    const claim = allData.workerscomp.find(c => {
+        const sheetClaimNumber = c['Claim Number'] || c.ClaimNumber;
+        console.log('Comparing:', sheetClaimNumber, 'with', claimNumber);
+        return sheetClaimNumber === claimNumber;
+    });
+    
+    console.log('Found claim:', claim);
     
     if (!claim) {
-        showAlert('Claim not found', 'danger');
+        showAlert('Claim not found. Check console for details.', 'danger');
         return;
     }
     
@@ -2739,8 +2759,10 @@ tbody.innerHTML = allData.incidents.map(inc => `
         }
 
         async function submitClaim() {
+            console.log('submitClaim called');
             const form = document.getElementById('createClaimForm');
             if (!form.checkValidity()) {
+                console.log('Form validation failed');
                 form.reportValidity();
                 return;
             }
@@ -2764,38 +2786,264 @@ tbody.innerHTML = allData.incidents.map(inc => `
             const medicalCosts = parseFloat(claimData['Medical Costs']) || 0;
             claimData['Total Claim Cost'] = (weeklyBenefits + medicalCosts).toString();
 
+            console.log('Claim Data:', claimData);
+
             try {
                 // Use URL-encoded form data to avoid CORS preflight
                 const formData = new URLSearchParams();
                 formData.append('action', 'submitWorkersComp');
                 formData.append('data', JSON.stringify(claimData));
                 
+                console.log('Sending to:', GOOGLE_SCRIPT_URL);
+                console.log('FormData:', formData.toString());
+                
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
                     body: formData
                 });
 
-                if (!response.ok) throw new Error('Failed to submit claim');
+                console.log('Response status:', response.status);
+                const result = await response.json();
+                console.log('Response data:', result);
+
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || 'Failed to submit claim');
+                }
                 
                 showAlert('Workers Comp claim created successfully!', 'success');
                 closeModal('createClaimModal');
                 form.reset();
                 await loadData();
             } catch (error) {
-                console.error('Error:', error);
-                showAlert('Error creating claim. Please try again.', 'danger');
+                console.error('Full error:', error);
+                showAlert('Error creating claim: ' + error.message, 'danger');
             }
         }
 
+        // RTW PLAN STORAGE
+        let rtwPlans = {}; // Store RTW plans by claim number
+        
+        // Initialize RTW plans from localStorage
+        function initializeRTWPlans() {
+            const saved = localStorage.getItem('ksc_rtw_plans');
+            if (saved) rtwPlans = JSON.parse(saved);
+        }
+        
+        // Call on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeRTWPlans();
+        });
+        
         function showRTWPlanModal(claimNumber) {
             currentClaimForRTW = claimNumber;
+            
+            // Load existing RTW plan if it exists
+            const existingPlan = rtwPlans[claimNumber];
+            
+            if (existingPlan) {
+                // Populate form with existing data
+                document.getElementById('rtwMedicalClearance').value = existingPlan.medicalClearance || '';
+                document.getElementById('rtwSuitableDuties').value = existingPlan.suitableDuties || '';
+                document.getElementById('rtwRestrictions').value = existingPlan.restrictions || '';
+                
+                document.getElementById('rtwWeek1Start').value = existingPlan.week1Start || '';
+                document.getElementById('rtwWeek1Review').value = existingPlan.week1Review || '';
+                document.getElementById('rtwWeek1Notes').value = existingPlan.week1Notes || '';
+                document.getElementById('rtwWeek1Hours').value = existingPlan.week1Hours || '4';
+                
+                document.getElementById('rtwWeek2Start').value = existingPlan.week2Start || '';
+                document.getElementById('rtwWeek2Review').value = existingPlan.week2Review || '';
+                document.getElementById('rtwWeek2Notes').value = existingPlan.week2Notes || '';
+                document.getElementById('rtwWeek2Hours').value = existingPlan.week2Hours || '6';
+                
+                document.getElementById('rtwFullDate').value = existingPlan.fullDate || '';
+                document.getElementById('rtwActualDate').value = existingPlan.actualDate || '';
+                document.getElementById('rtwWeek3Hours').value = existingPlan.week3Hours || '8';
+                
+                document.getElementById('rtwProgressNotes').value = existingPlan.progressNotes || '';
+            } else {
+                // Clear form for new RTW plan
+                clearRTWForm();
+            }
+            
             showModal('rtwPlanModal');
+        }
+        
+        function clearRTWForm() {
+            document.getElementById('rtwMedicalClearance').value = '';
+            document.getElementById('rtwSuitableDuties').value = '';
+            document.getElementById('rtwRestrictions').value = '';
+            
+            document.getElementById('rtwWeek1Start').value = '';
+            document.getElementById('rtwWeek1Review').value = '';
+            document.getElementById('rtwWeek1Notes').value = '';
+            document.getElementById('rtwWeek1Hours').value = '4';
+            
+            document.getElementById('rtwWeek2Start').value = '';
+            document.getElementById('rtwWeek2Review').value = '';
+            document.getElementById('rtwWeek2Notes').value = '';
+            document.getElementById('rtwWeek2Hours').value = '6';
+            
+            document.getElementById('rtwFullDate').value = '';
+            document.getElementById('rtwActualDate').value = '';
+            document.getElementById('rtwWeek3Hours').value = '8';
+            
+            document.getElementById('rtwProgressNotes').value = '';
         }
 
         async function saveRTWPlan() {
+            if (!currentClaimForRTW) return;
+            
+            // Collect RTW plan data
+            const rtwData = {
+                claimNumber: currentClaimForRTW,
+                medicalClearance: document.getElementById('rtwMedicalClearance').value,
+                suitableDuties: document.getElementById('rtwSuitableDuties').value,
+                restrictions: document.getElementById('rtwRestrictions').value,
+                
+                week1Start: document.getElementById('rtwWeek1Start').value,
+                week1Review: document.getElementById('rtwWeek1Review').value,
+                week1Notes: document.getElementById('rtwWeek1Notes').value,
+                week1Hours: document.getElementById('rtwWeek1Hours').value || '4',
+                
+                week2Start: document.getElementById('rtwWeek2Start').value,
+                week2Review: document.getElementById('rtwWeek2Review').value,
+                week2Notes: document.getElementById('rtwWeek2Notes').value,
+                week2Hours: document.getElementById('rtwWeek2Hours').value || '6',
+                
+                fullDate: document.getElementById('rtwFullDate').value,
+                actualDate: document.getElementById('rtwActualDate').value,
+                week3Hours: document.getElementById('rtwWeek3Hours').value || '8',
+                
+                progressNotes: document.getElementById('rtwProgressNotes').value,
+                savedDate: new Date().toISOString()
+            };
+            
+            // Save to localStorage
+            rtwPlans[currentClaimForRTW] = rtwData;
+            localStorage.setItem('ksc_rtw_plans', JSON.stringify(rtwPlans));
+            
             showAlert('RTW Plan saved successfully!', 'success');
             closeModal('rtwPlanModal');
-            // In production, save RTW plan data to Google Sheets
+        }
+        
+        function exportRTWPDF() {
+            if (!currentClaimForRTW) return;
+            
+            // Check if jsPDF is loaded
+            if (!window.jspdf) {
+                showAlert('PDF library is still loading. Please try again in a moment.', 'warning');
+                return;
+            }
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const rtwData = rtwPlans[currentClaimForRTW];
+            if (!rtwData) {
+                showAlert('No RTW plan data to export', 'warning');
+                return;
+            }
+            
+            // Header
+            doc.setFillColor(61, 40, 23);
+            doc.rect(0, 0, 210, 40, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(20);
+            doc.text('RETURN TO WORK PLAN', 105, 15, { align: 'center' });
+            doc.setFontSize(12);
+            doc.text('King Strategies Consulting', 105, 25, { align: 'center' });
+            doc.text(currentClaimForRTW, 105, 32, { align: 'center' });
+            
+            let yPos = 50;
+            
+            // Worker Info
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(14);
+            doc.text('WORKER INFORMATION', 20, yPos);
+            yPos += 8;
+            
+            doc.setFontSize(10);
+            doc.text(`Medical Clearance Date: ${rtwData.medicalClearance || 'Not set'}`, 20, yPos);
+            yPos += 10;
+            
+            doc.setFontSize(12);
+            doc.text('Suitable Duties:', 20, yPos);
+            yPos += 6;
+            doc.setFontSize(9);
+            const dutiesLines = doc.splitTextToSize(rtwData.suitableDuties || 'Not specified', 170);
+            doc.text(dutiesLines, 20, yPos);
+            yPos += (dutiesLines.length * 4) + 8;
+            
+            doc.setFontSize(12);
+            doc.text('Restrictions:', 20, yPos);
+            yPos += 6;
+            doc.setFontSize(9);
+            const restrictLines = doc.splitTextToSize(rtwData.restrictions || 'Not specified', 170);
+            doc.text(restrictLines, 20, yPos);
+            yPos += (restrictLines.length * 4) + 12;
+            
+            // Graduated Hours Plan
+            doc.setFontSize(14);
+            doc.text('GRADUATED HOURS PLAN', 20, yPos);
+            yPos += 10;
+            
+            // Week 1
+            doc.setFillColor(245, 240, 234);
+            doc.rect(20, yPos - 5, 170, 30, 'F');
+            doc.setFontSize(12);
+            doc.text(`Week 1: ${rtwData.week1Hours || '4'} hrs/day`, 25, yPos);
+            yPos += 6;
+            doc.setFontSize(9);
+            doc.text(`Start: ${rtwData.week1Start || 'Not set'}  |  Review: ${rtwData.week1Review || 'Not set'}`, 25, yPos);
+            yPos += 5;
+            if (rtwData.week1Notes) {
+                doc.text(`Notes: ${rtwData.week1Notes}`, 25, yPos);
+            }
+            yPos += 18;
+            
+            // Week 2-3
+            doc.setFillColor(255, 255, 255);
+            doc.rect(20, yPos - 5, 170, 30, 'F');
+            doc.setFontSize(12);
+            doc.text(`Week 2-3: ${rtwData.week2Hours || '6'} hrs/day`, 25, yPos);
+            yPos += 6;
+            doc.setFontSize(9);
+            doc.text(`Start: ${rtwData.week2Start || 'Not set'}  |  Review: ${rtwData.week2Review || 'Not set'}`, 25, yPos);
+            yPos += 5;
+            if (rtwData.week2Notes) {
+                doc.text(`Notes: ${rtwData.week2Notes}`, 25, yPos);
+            }
+            yPos += 18;
+            
+            // Week 4+
+            doc.setFillColor(245, 240, 234);
+            doc.rect(20, yPos - 5, 170, 20, 'F');
+            doc.setFontSize(12);
+            doc.text(`Week 4+: ${rtwData.week3Hours || '8'} hrs/day (Full Duties)`, 25, yPos);
+            yPos += 6;
+            doc.setFontSize(9);
+            doc.text(`Target RTW: ${rtwData.fullDate || 'Not set'}  |  Actual: ${rtwData.actualDate || 'Pending'}`, 25, yPos);
+            yPos += 18;
+            
+            // Progress Notes
+            if (rtwData.progressNotes) {
+                if (yPos > 250) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+                
+                doc.setFontSize(14);
+                doc.text('PROGRESS NOTES', 20, yPos);
+                yPos += 8;
+                
+                doc.setFontSize(9);
+                const progressLines = doc.splitTextToSize(rtwData.progressNotes, 170);
+                doc.text(progressLines, 20, yPos);
+            }
+            
+            doc.save(`RTW-Plan-${currentClaimForRTW}.pdf`);
+            showAlert('RTW Plan exported to PDF!', 'success');
         }
 
         // HAZARD FUNCTIONS
