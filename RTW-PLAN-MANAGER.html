@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KSC RTW Plan Manager</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --ksc-primary: #3d2817;
+            --ksc-secondary: #6d5742;
+            --ksc-accent: #d4c6b8;
+            --ksc-light: #eee4db;
+            --bg-cream: #f5f0ea;
+            --success: #059669;
+            --warning: #f59e0b;
+            --danger: #dc2626;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-cream);
+            color: var(--ksc-primary);
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 2rem;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            font-size: 2rem;
+            color: var(--ksc-primary);
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            border: none;
+            font-size: 0.9375rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background: var(--ksc-primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2a1a0f;
+            transform: translateY(-1px);
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #047857;
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: var(--ksc-primary);
+            border: 1px solid var(--ksc-accent);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--ksc-light);
+        }
+        
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+        
+        .claims-list {
+            display: grid;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .claim-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .claim-card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            transform: translateY(-2px);
+        }
+        
+        .claim-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+        
+        .claim-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .claim-number {
+            color: var(--ksc-secondary);
+            font-size: 0.875rem;
+        }
+        
+        .claim-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.8125rem;
+            font-weight: 500;
+        }
+        
+        .status-lodged {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-active {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .status-monitoring {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-closed {
+            background: #e7e5e4;
+            color: #44403c;
+        }
+        
+        .claim-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .detail-item {
+            font-size: 0.875rem;
+        }
+        
+        .detail-label {
+            color: var(--ksc-secondary);
+            margin-bottom: 0.25rem;
+        }
+        
+        .detail-value {
+            font-weight: 500;
+        }
+        
+        .rtw-plan-view {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .plan-header {
+            background: var(--ksc-primary);
+            color: white;
+            padding: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+        }
+        
+        .plan-info h2 {
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .plan-meta {
+            opacity: 0.9;
+            font-size: 0.9375rem;
+        }
+        
+        .plan-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+        
+        .plan-body {
+            padding: 2rem;
+        }
+        
+        .summary-section {
+            background: var(--ksc-light);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .summary-title {
+            font-weight: 600;
+            font-size: 1.125rem;
+            margin-bottom: 1rem;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .status-selector {
+            margin-bottom: 2rem;
+        }
+        
+        .status-selector label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .status-dropdown {
+            width: 100%;
+            max-width: 300px;
+            padding: 0.75rem;
+            border: 2px solid var(--ksc-accent);
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        
+        .rtw-phase {
+            background: white;
+            border: 2px solid var(--ksc-accent);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .phase-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--ksc-accent);
+        }
+        
+        .phase-title {
+            font-weight: 600;
+            font-size: 1.25rem;
+        }
+        
+        .hours-adjuster {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .hours-display {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--ksc-primary);
+            min-width: 120px;
+            text-align: center;
+        }
+        
+        .hour-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: var(--ksc-primary);
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .hour-btn:hover {
+            background: #2a1a0f;
+            transform: scale(1.1);
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--ksc-primary);
+            font-size: 0.9375rem;
+        }
+        
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.9375rem;
+        }
+        
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .notes-section {
+            background: var(--ksc-light);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .notes-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .notes-title {
+            font-weight: 600;
+            font-size: 1.125rem;
+        }
+        
+        .note-input-group {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .note-input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.9375rem;
+        }
+        
+        .notes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .note-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 6px;
+            border-left: 3px solid var(--ksc-primary);
+        }
+        
+        .note-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8125rem;
+            color: var(--ksc-secondary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .note-text {
+            color: var(--ksc-primary);
+            line-height: 1.5;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid #e7e5e4;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        
+        .modal-close:hover {
+            background: var(--ksc-light);
+        }
+        
+        .modal-body {
+            padding: 2rem;
+        }
+        
+        .modal-footer {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid #e7e5e4;
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 16px;
+        }
+        
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        
+        .empty-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .empty-desc {
+            color: var(--ksc-secondary);
+            margin-bottom: 1.5rem;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .back-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .back-btn:hover {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <h1>🏥 Return to Work Plans</h1>
+            <button class="btn btn-primary" onclick="showCreatePlanModal()">+ New RTW Plan</button>
+        </div>
+
+        <!-- CLAIMS LIST VIEW -->
+        <div id="claimsListView">
+            <div id="claimsList" class="claims-list">
+                <!-- Claims will be rendered here -->
+            </div>
+        </div>
+
+        <!-- PLAN DETAIL VIEW -->
+        <div id="planDetailView" class="hidden">
+            <!-- Plan details will be rendered here -->
+        </div>
+    </div>
+
+    <!-- CREATE PLAN MODAL -->
+    <div id="createPlanModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Create RTW Plan</h2>
+                <button class="modal-close" onclick="closeModal('createPlanModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="createPlanForm">
+                    <div class="form-group">
+                        <label class="form-label">Workers Comp Claim Number *</label>
+                        <input type="text" class="form-input" id="claimNumber" placeholder="e.g., WC-2026-001" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Injured Worker Name *</label>
+                        <input type="text" class="form-input" id="workerName" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Date of Injury *</label>
+                            <input type="date" class="form-input" id="injuryDate" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Medical Clearance Date</label>
+                            <input type="date" class="form-input" id="medicalClearance">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Body Part Injured</label>
+                        <input type="text" class="form-input" id="bodyPart" placeholder="e.g., Lower Back">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Nature of Injury</label>
+                        <input type="text" class="form-input" id="natureOfInjury" placeholder="e.g., Muscle Strain">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Suitable Duties</label>
+                        <textarea class="form-textarea" id="suitableDuties" 
+                                  placeholder="List suitable duties worker can perform..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Medical Restrictions</label>
+                        <textarea class="form-textarea" id="restrictions" 
+                                  placeholder="e.g., No lifting >5kg, No heights, Light duties only..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('createPlanModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="createRTWPlan()">Create Plan</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        // CONFIGURATION
+        const GOOGLE_SCRIPT_URL = 'YOUR_GOOGLE_SCRIPT_URL_HERE';
+        const ANTHROPIC_API_KEY = 'YOUR_ANTHROPIC_API_KEY_HERE';
+
+        // GLOBAL DATA
+        let rtwPlans = [];
+        let currentPlanIndex = null;
+
+        // INITIALIZE
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPlans();
+            renderClaimsList();
+        });
+
+        // LOAD PLANS FROM LOCALSTORAGE
+        function loadPlans() {
+            const saved = localStorage.getItem('ksc_rtw_plans');
+            if (saved) {
+                rtwPlans = JSON.parse(saved);
+            }
+        }
+
+        // SAVE PLANS TO LOCALSTORAGE
+        function savePlans() {
+            localStorage.setItem('ksc_rtw_plans', JSON.stringify(rtwPlans));
+        }
+
+        // RENDER CLAIMS LIST
+        function renderClaimsList() {
+            const container = document.getElementById('claimsList');
+            
+            if (rtwPlans.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📋</div>
+                        <div class="empty-title">No RTW Plans Yet</div>
+                        <div class="empty-desc">Create your first Return to Work plan to get started</div>
+                        <button class="btn btn-primary" onclick="showCreatePlanModal()">+ Create RTW Plan</button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = rtwPlans.map((plan, index) => `
+                <div class="claim-card" onclick="viewPlanDetail(${index})">
+                    <div class="claim-header">
+                        <div>
+                            <div class="claim-title">${plan.workerName}</div>
+                            <div class="claim-number">${plan.claimNumber}</div>
+                        </div>
+                        <span class="claim-status status-${plan.status.toLowerCase().replace(' ', '-')}">${plan.status}</span>
+                    </div>
+                    <div class="claim-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Date of Injury</div>
+                            <div class="detail-value">${formatDate(plan.injuryDate)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Body Part</div>
+                            <div class="detail-value">${plan.bodyPart || 'Not specified'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Current Phase</div>
+                            <div class="detail-value">${getCurrentPhase(plan)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Total Notes</div>
+                            <div class="detail-value">${plan.notes ? plan.notes.length : 0} notes</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // VIEW PLAN DETAIL
+        function viewPlanDetail(index) {
+            currentPlanIndex = index;
+            const plan = rtwPlans[index];
+            
+            document.getElementById('claimsListView').classList.add('hidden');
+            document.getElementById('planDetailView').classList.remove('hidden');
+            
+            renderPlanDetail(plan, index);
+        }
+
+        // RENDER PLAN DETAIL
+        function renderPlanDetail(plan, index) {
+            const container = document.getElementById('planDetailView');
+            
+            container.innerHTML = `
+                <div class="rtw-plan-view">
+                    <div class="plan-header">
+                        <div>
+                            <button class="back-btn" onclick="backToList()">← Back to All Plans</button>
+                            <div class="plan-info">
+                                <h2>${plan.workerName}</h2>
+                                <div class="plan-meta">Claim: ${plan.claimNumber} | Created: ${formatDate(plan.createdDate)}</div>
+                            </div>
+                        </div>
+                        <div class="plan-actions">
+                            <button class="btn btn-secondary" onclick="duplicatePlan(${index})">📋 Duplicate</button>
+                            <button class="btn btn-success" onclick="exportPlanPDF(${index})">📄 Export PDF</button>
+                        </div>
+                    </div>
+
+                    <div class="plan-body">
+                        <!-- SUMMARY SECTION -->
+                        <div class="summary-section">
+                            <div class="summary-title">Claim Summary</div>
+                            <div class="summary-grid">
+                                <div class="detail-item">
+                                    <div class="detail-label">Claim Number</div>
+                                    <div class="detail-value">${plan.claimNumber}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Date of Injury</div>
+                                    <div class="detail-value">${formatDate(plan.injuryDate)}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Body Part</div>
+                                    <div class="detail-value">${plan.bodyPart || 'Not specified'}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Nature of Injury</div>
+                                    <div class="detail-value">${plan.natureOfInjury || 'Not specified'}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Medical Clearance</div>
+                                    <div class="detail-value">${plan.medicalClearance ? formatDate(plan.medicalClearance) : 'Pending'}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Days Since Injury</div>
+                                    <div class="detail-value">${getDaysSince(plan.injuryDate)} days</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- STATUS SELECTOR -->
+                        <div class="status-selector">
+                            <label for="statusDropdown">RTW Plan Status</label>
+                            <select class="status-dropdown" id="statusDropdown" onchange="updateStatus(${index}, this.value)">
+                                <option value="Lodged" ${plan.status === 'Lodged' ? 'selected' : ''}>Lodged</option>
+                                <option value="Active" ${plan.status === 'Active' ? 'selected' : ''}>Active</option>
+                                <option value="Monitoring" ${plan.status === 'Monitoring' ? 'selected' : ''}>Monitoring</option>
+                                <option value="Closed" ${plan.status === 'Closed' ? 'selected' : ''}>Closed</option>
+                            </select>
+                        </div>
+
+                        <!-- PHASE 1 -->
+                        <div class="rtw-phase">
+                            <div class="phase-header">
+                                <div class="phase-title">📅 Week 1 - Initial Return</div>
+                                <div class="hours-adjuster">
+                                    <button class="hour-btn" onclick="adjustHours(${index}, 0, -1)">−</button>
+                                    <div class="hours-display">${plan.phases[0].hours} hrs/day</div>
+                                    <button class="hour-btn" onclick="adjustHours(${index}, 0, 1)">+</button>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Start Date</label>
+                                    <input type="date" class="form-input" value="${plan.phases[0].startDate || ''}" 
+                                           onchange="updatePhaseDate(${index}, 0, 'startDate', this.value)">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Review Date</label>
+                                    <input type="date" class="form-input" value="${plan.phases[0].reviewDate || ''}" 
+                                           onchange="updatePhaseDate(${index}, 0, 'reviewDate', this.value)">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Phase Notes</label>
+                                <textarea class="form-textarea" 
+                                          onchange="updatePhaseNotes(${index}, 0, this.value)">${plan.phases[0].notes || ''}</textarea>
+                            </div>
+                        </div>
+
+                        <!-- PHASE 2 -->
+                        <div class="rtw-phase">
+                            <div class="phase-header">
+                                <div class="phase-title">📅 Week 2-3 - Progressive Increase</div>
+                                <div class="hours-adjuster">
+                                    <button class="hour-btn" onclick="adjustHours(${index}, 1, -1)">−</button>
+                                    <div class="hours-display">${plan.phases[1].hours} hrs/day</div>
+                                    <button class="hour-btn" onclick="adjustHours(${index}, 1, 1)">+</button>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Start Date</label>
+                                    <input type="date" class="form-input" value="${plan.phases[1].startDate || ''}" 
+                                           onchange="updatePhaseDate(${index}, 1, 'startDate', this.value)">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Review Date</label>
+                                    <input type="date" class="form-input" value="${plan.phases[1].reviewDate || ''}" 
+                                           onchange="updatePhaseDate(${index}, 1, 'reviewDate', this.value)">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Phase Notes</label>
+                                <textarea class="form-textarea" 
+                                          onchange="updatePhaseNotes(${index}, 1, this.value)">${plan.phases[1].notes || ''}</textarea>
+                            </div>
+                        </div>
+
+                        <!-- PHASE 3 -->
+                        <div class="rtw-phase">
+                            <div class="phase-header">
+                                <div class="phase-title">📅 Week 4+ - Full Duties</div>
+                                <div class="hours-adjuster">
+                                    <button class="hour-btn" onclick="adjustHours(${index}, 2, -1)">−</button>
+                                    <div class="hours-display">${plan.phases[2].hours} hrs/day</div>
+                                    <button class="hour-btn" onclick="adjustHours(${index}, 2, 1)">+</button>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Target Full RTW Date</label>
+                                    <input type="date" class="form-input" value="${plan.phases[2].targetDate || ''}" 
+                                           onchange="updatePhaseDate(${index}, 2, 'targetDate', this.value)">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Actual RTW Date</label>
+                                    <input type="date" class="form-input" value="${plan.phases[2].actualDate || ''}" 
+                                           onchange="updatePhaseDate(${index}, 2, 'actualDate', this.value)">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Phase Notes</label>
+                                <textarea class="form-textarea" 
+                                          onchange="updatePhaseNotes(${index}, 2, this.value)">${plan.phases[2].notes || ''}</textarea>
+                            </div>
+                        </div>
+
+                        <!-- SUITABLE DUTIES & RESTRICTIONS -->
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Suitable Duties</label>
+                                <textarea class="form-textarea" 
+                                          onchange="updatePlanField(${index}, 'suitableDuties', this.value)">${plan.suitableDuties || ''}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Medical Restrictions</label>
+                                <textarea class="form-textarea" 
+                                          onchange="updatePlanField(${index}, 'restrictions', this.value)">${plan.restrictions || ''}</textarea>
+                            </div>
+                        </div>
+
+                        <!-- NOTES SYSTEM -->
+                        <div class="notes-section">
+                            <div class="notes-header">
+                                <div class="notes-title">💬 Case Notes & Comments</div>
+                            </div>
+                            <div class="note-input-group">
+                                <input type="text" class="note-input" id="newNote${index}" 
+                                       placeholder="Add a note or comment..." onkeypress="if(event.key==='Enter') addNote(${index})">
+                                <button class="btn btn-primary btn-sm" onclick="addNote(${index})">Add Note</button>
+                            </div>
+                            <div class="notes-list" id="notesList${index}">
+                                ${renderNotes(plan.notes || [])}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // RENDER NOTES
+        function renderNotes(notes) {
+            if (!notes || notes.length === 0) {
+                return '<div style="text-align: center; color: #6d5742; padding: 2rem;">No notes yet. Add your first note above.</div>';
+            }
+            
+            return notes.map(note => `
+                <div class="note-item">
+                    <div class="note-meta">
+                        <span>${note.author || 'System'}</span>
+                        <span>${formatDateTime(note.timestamp)}</span>
+                    </div>
+                    <div class="note-text">${note.text}</div>
+                </div>
+            `).join('');
+        }
+
+        // ADD NOTE
+        function addNote(index) {
+            const input = document.getElementById(`newNote${index}`);
+            const text = input.value.trim();
+            
+            if (!text) return;
+            
+            if (!rtwPlans[index].notes) {
+                rtwPlans[index].notes = [];
+            }
+            
+            rtwPlans[index].notes.unshift({
+                text: text,
+                timestamp: new Date().toISOString(),
+                author: 'Current User' // Replace with actual user name
+            });
+            
+            savePlans();
+            input.value = '';
+            
+            // Re-render notes
+            document.getElementById(`notesList${index}`).innerHTML = renderNotes(rtwPlans[index].notes);
+        }
+
+        // UPDATE STATUS
+        function updateStatus(index, newStatus) {
+            rtwPlans[index].status = newStatus;
+            rtwPlans[index].statusUpdated = new Date().toISOString();
+            savePlans();
+            
+            // Add automatic note
+            if (!rtwPlans[index].notes) {
+                rtwPlans[index].notes = [];
+            }
+            rtwPlans[index].notes.unshift({
+                text: `Status changed to: ${newStatus}`,
+                timestamp: new Date().toISOString(),
+                author: 'System'
+            });
+            
+            savePlans();
+            renderPlanDetail(rtwPlans[index], index);
+        }
+
+        // ADJUST HOURS
+        function adjustHours(planIndex, phaseIndex, change) {
+            const currentHours = rtwPlans[planIndex].phases[phaseIndex].hours;
+            const newHours = Math.max(1, Math.min(12, currentHours + change));
+            rtwPlans[planIndex].phases[phaseIndex].hours = newHours;
+            savePlans();
+            renderPlanDetail(rtwPlans[planIndex], planIndex);
+        }
+
+        // UPDATE PHASE DATE
+        function updatePhaseDate(planIndex, phaseIndex, field, value) {
+            rtwPlans[planIndex].phases[phaseIndex][field] = value;
+            savePlans();
+        }
+
+        // UPDATE PHASE NOTES
+        function updatePhaseNotes(planIndex, phaseIndex, value) {
+            rtwPlans[planIndex].phases[phaseIndex].notes = value;
+            savePlans();
+        }
+
+        // UPDATE PLAN FIELD
+        function updatePlanField(planIndex, field, value) {
+            rtwPlans[planIndex][field] = value;
+            savePlans();
+        }
+
+        // DUPLICATE PLAN
+        function duplicatePlan(index) {
+            const original = rtwPlans[index];
+            const copy = JSON.parse(JSON.stringify(original));
+            copy.id = 'RTW-' + Date.now();
+            copy.workerName = original.workerName + ' (Copy)';
+            copy.createdDate = new Date().toISOString();
+            copy.status = 'Lodged';
+            copy.notes = [];
+            
+            rtwPlans.push(copy);
+            savePlans();
+            renderClaimsList();
+            backToList();
+            alert('RTW Plan duplicated successfully!');
+        }
+
+        // EXPORT PDF WITH AI SUMMARY
+        async function exportPlanPDF(index) {
+            const plan = rtwPlans[index];
+            
+            if (ANTHROPIC_API_KEY === 'YOUR_ANTHROPIC_API_KEY_HERE') {
+                alert('Please configure your Anthropic API key to use AI export feature.');
+                return;
+            }
+            
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = '⏳ Generating AI Summary...';
+            
+            try {
+                // Generate AI Executive Summary
+                const summary = await generateAISummary(plan);
+                
+                btn.textContent = '📄 Creating PDF...';
+                
+                // Generate PDF
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Header
+                doc.setFillColor(61, 40, 23);
+                doc.rect(0, 0, 210, 40, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(20);
+                doc.text('RETURN TO WORK PLAN', 105, 15, { align: 'center' });
+                doc.setFontSize(12);
+                doc.text('King Strategies Consulting', 105, 25, { align: 'center' });
+                doc.text(plan.claimNumber, 105, 32, { align: 'center' });
+                
+                // AI Executive Summary
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(14);
+                doc.text('EXECUTIVE SUMMARY (AI Generated)', 20, 50);
+                doc.setFontSize(10);
+                const summaryLines = doc.splitTextToSize(summary, 170);
+                doc.text(summaryLines, 20, 58);
+                
+                let yPos = 58 + (summaryLines.length * 5) + 10;
+                
+                // Worker Details
+                doc.setFontSize(14);
+                doc.text('WORKER DETAILS', 20, yPos);
+                yPos += 8;
+                doc.setFontSize(10);
+                doc.text(`Worker Name: ${plan.workerName}`, 20, yPos);
+                yPos += 6;
+                doc.text(`Claim Number: ${plan.claimNumber}`, 20, yPos);
+                yPos += 6;
+                doc.text(`Date of Injury: ${formatDate(plan.injuryDate)}`, 20, yPos);
+                yPos += 6;
+                doc.text(`Body Part: ${plan.bodyPart || 'Not specified'}`, 20, yPos);
+                yPos += 6;
+                doc.text(`Nature of Injury: ${plan.natureOfInjury || 'Not specified'}`, 20, yPos);
+                yPos += 6;
+                doc.text(`Status: ${plan.status}`, 20, yPos);
+                yPos += 12;
+                
+                // RTW Plan Phases
+                doc.setFontSize(14);
+                doc.text('RETURN TO WORK PHASES', 20, yPos);
+                yPos += 8;
+                
+                plan.phases.forEach((phase, idx) => {
+                    doc.setFontSize(12);
+                    doc.text(`Phase ${idx + 1}: ${phase.name}`, 20, yPos);
+                    yPos += 6;
+                    doc.setFontSize(10);
+                    doc.text(`Hours: ${phase.hours} hrs/day`, 30, yPos);
+                    yPos += 6;
+                    if (phase.startDate) {
+                        doc.text(`Start Date: ${formatDate(phase.startDate)}`, 30, yPos);
+                        yPos += 6;
+                    }
+                    if (phase.notes) {
+                        const notesLines = doc.splitTextToSize(`Notes: ${phase.notes}`, 150);
+                        doc.text(notesLines, 30, yPos);
+                        yPos += (notesLines.length * 5) + 2;
+                    }
+                    yPos += 4;
+                });
+                
+                // Restrictions
+                if (plan.restrictions) {
+                    if (yPos > 250) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+                    doc.setFontSize(14);
+                    doc.text('MEDICAL RESTRICTIONS', 20, yPos);
+                    yPos += 8;
+                    doc.setFontSize(10);
+                    const restrictionLines = doc.splitTextToSize(plan.restrictions, 170);
+                    doc.text(restrictionLines, 20, yPos);
+                }
+                
+                // Save PDF
+                doc.save(`RTW-Plan-${plan.claimNumber}.pdf`);
+                
+                btn.disabled = false;
+                btn.textContent = '📄 Export PDF';
+                alert('PDF exported successfully!');
+                
+            } catch (error) {
+                console.error('PDF export error:', error);
+                btn.disabled = false;
+                btn.textContent = '📄 Export PDF';
+                alert('Error generating PDF: ' + error.message);
+            }
+        }
+
+        // GENERATE AI SUMMARY
+        async function generateAISummary(plan) {
+            const prompt = `Write a professional executive summary for this Return to Work plan.
+
+Worker: ${plan.workerName}
+Claim: ${plan.claimNumber}
+Date of Injury: ${plan.injuryDate}
+Body Part: ${plan.bodyPart || 'Not specified'}
+Nature of Injury: ${plan.natureOfInjury || 'Not specified'}
+Current Status: ${plan.status}
+Days Since Injury: ${getDaysSince(plan.injuryDate)}
+
+RTW Plan:
+- Week 1: ${plan.phases[0].hours} hours/day
+- Week 2-3: ${plan.phases[1].hours} hours/day
+- Week 4+: ${plan.phases[2].hours} hours/day
+
+Restrictions: ${plan.restrictions || 'None specified'}
+Suitable Duties: ${plan.suitableDuties || 'Not specified'}
+
+Write a 2-3 paragraph executive summary that includes:
+1. What happened and current injury status
+2. The graduated RTW plan approach
+3. Expected timeline to full duties
+4. Key restrictions and monitoring points
+
+Write in professional, executive-level language suitable for management review.`;
+
+            const response = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': ANTHROPIC_API_KEY,
+                    'anthropic-version': '2023-06-01'
+                },
+                body: JSON.stringify({
+                    model: 'claude-sonnet-4-20250514',
+                    max_tokens: 1000,
+                    messages: [{
+                        role: 'user',
+                        content: prompt
+                    }]
+                })
+            });
+
+            const data = await response.json();
+            return data.content[0].text;
+        }
+
+        // CREATE RTW PLAN
+        function createRTWPlan() {
+            const form = document.getElementById('createPlanForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const newPlan = {
+                id: 'RTW-' + Date.now(),
+                claimNumber: document.getElementById('claimNumber').value,
+                workerName: document.getElementById('workerName').value,
+                injuryDate: document.getElementById('injuryDate').value,
+                medicalClearance: document.getElementById('medicalClearance').value,
+                bodyPart: document.getElementById('bodyPart').value,
+                natureOfInjury: document.getElementById('natureOfInjury').value,
+                suitableDuties: document.getElementById('suitableDuties').value,
+                restrictions: document.getElementById('restrictions').value,
+                createdDate: new Date().toISOString(),
+                status: 'Lodged',
+                notes: [],
+                phases: [
+                    { name: 'Week 1', hours: 4, startDate: '', reviewDate: '', notes: '' },
+                    { name: 'Week 2-3', hours: 6, startDate: '', reviewDate: '', notes: '' },
+                    { name: 'Week 4+', hours: 8, targetDate: '', actualDate: '', notes: '' }
+                ]
+            };
+
+            rtwPlans.push(newPlan);
+            savePlans();
+            renderClaimsList();
+            closeModal('createPlanModal');
+            form.reset();
+            alert('RTW Plan created successfully!');
+        }
+
+        // MODAL FUNCTIONS
+        function showCreatePlanModal() {
+            document.getElementById('createPlanModal').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function backToList() {
+            document.getElementById('planDetailView').classList.add('hidden');
+            document.getElementById('claimsListView').classList.remove('hidden');
+            currentPlanIndex = null;
+            renderClaimsList();
+        }
+
+        // HELPER FUNCTIONS
+        function formatDate(dateString) {
+            if (!dateString) return 'Not set';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+
+        function formatDateTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('en-AU', { 
+                day: '2-digit', 
+                month: 'short', 
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function getDaysSince(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffTime = Math.abs(now - date);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays;
+        }
+
+        function getCurrentPhase(plan) {
+            const daysSince = getDaysSince(plan.injuryDate);
+            if (daysSince <= 7) return 'Week 1';
+            if (daysSince <= 21) return 'Week 2-3';
+            return 'Week 4+';
+        }
+    </script>
+</body>
+</html>
