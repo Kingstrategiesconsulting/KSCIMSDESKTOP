@@ -3,1455 +3,841 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KSC Manager Backend - Complete System</title>
+    <title>Manager Backend - KSC</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
         :root {
-            --ksc-primary: #3d2817;
-            --ksc-secondary: #6d5742;
-            --ksc-accent: #d4c6b8;
-            --ksc-light: #eee4db;
-            --bg-cream: #f5f0ea;
-            --success: #059669;
-            --warning: #f59e0b;
-            --danger: #dc2626;
+            --primary: #1a1a1a;
+            --secondary: #525252;
+            --accent: #78716c;
+            --bg: #fafaf9;
+            --border: #e7e5e4;
         }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: var(--bg-cream);
-            color: var(--ksc-primary);
-            min-height: 100vh;
+            background: var(--bg);
+            color: var(--primary);
+            line-height: 1.6;
         }
-        
-        /* HEADER */
+
         .header {
-            background: linear-gradient(135deg, var(--ksc-primary) 0%, #2a1a0f 100%);
-            color: white;
-            padding: 1.5rem 2rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            background: white;
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        .header-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 1rem;
         }
-        .logo-section { display: flex; align-items: center; gap: 1rem; }
-        .logo-circle {
-            width: 56px; height: 56px; background: white; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: 300; font-size: 1rem; color: var(--ksc-primary); letter-spacing: 3px;
-        }
-        .app-title h1 { font-size: 1.5rem; font-weight: 600; }
-        .app-title p { font-size: 0.875rem; opacity: 0.9; }
-        .user-info { display: flex; align-items: center; gap: 1rem; }
-        .user-avatar {
-            width: 40px; height: 40px; background: rgba(255,255,255,0.2);
-            border-radius: 50%; display: flex; align-items: center;
-            justify-content: center; font-weight: 600;
-        }
-        
-        /* LAYOUT */
-        .container { display: flex; min-height: calc(100vh - 84px); }
-        .sidebar {
-            width: 260px; background: white; border-right: 1px solid #e7e5e4;
-            padding: 1.5rem 0; position: sticky; top: 0; height: calc(100vh - 84px);
-            overflow-y: auto;
-        }
-        .menu-item {
-            padding: 0.875rem 1.5rem; cursor: pointer; display: flex;
-            align-items: center; gap: 0.75rem; color: var(--ksc-secondary);
-            transition: all 0.2s; font-size: 0.9375rem;
-        }
-        .menu-item:hover { background: var(--ksc-light); color: var(--ksc-primary); }
-        .menu-item.active {
-            background: var(--ksc-accent); color: var(--ksc-primary);
-            font-weight: 600; border-left: 4px solid var(--ksc-primary);
-        }
-        .menu-icon { font-size: 1.25rem; width: 24px; text-align: center; }
-        
-        /* MAIN CONTENT */
-        .main-content { flex: 1; padding: 2rem; overflow-y: auto; }
-        .page-header {
-            margin-bottom: 2rem; display: flex;
-            justify-content: space-between; align-items: center;
-        }
-        .page-title { font-size: 2rem; font-weight: 600; color: var(--ksc-primary); }
-        .btn {
-            padding: 0.625rem 1.25rem; border-radius: 6px; border: none;
-            font-size: 0.9375rem; font-weight: 500; cursor: pointer;
-            transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem;
-        }
-        .btn-primary {
-            background: var(--ksc-primary); color: white;
-        }
-        .btn-primary:hover { background: #2a1a0f; transform: translateY(-1px); }
-        .btn-secondary {
-            background: white; color: var(--ksc-primary);
-            border: 1px solid var(--ksc-accent);
-        }
-        .btn-secondary:hover { background: var(--ksc-light); }
-        .btn-success { background: var(--success); color: white; }
-        .btn-success:hover { background: #047857; }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-danger:hover { background: #b91c1c; }
-        .btn-sm { padding: 0.375rem 0.75rem; font-size: 0.875rem; }
-        
-        /* CARDS */
-        .card {
-            background: white; border-radius: 12px;
-            padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            margin-bottom: 1.5rem;
-        }
-        .card-header {
-            font-size: 1.125rem; font-weight: 600;
-            margin-bottom: 1rem; color: var(--ksc-primary);
-        }
-        
-        /* STATS */
-        .stats-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem; margin-bottom: 2rem;
-        }
-        .stat-card {
-            background: white; padding: 1.5rem; border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .stat-label {
-            font-size: 0.875rem; color: var(--ksc-secondary);
-            margin-bottom: 0.5rem;
-        }
-        .stat-value {
-            font-size: 2rem; font-weight: 700; color: var(--ksc-primary);
-        }
-        .stat-change {
-            font-size: 0.875rem; margin-top: 0.5rem;
-        }
-        .stat-change.positive { color: var(--success); }
-        .stat-change.negative { color: var(--danger); }
-        
-        /* TABLE */
-        .table-container { overflow-x: auto; }
-        table {
-            width: 100%; border-collapse: collapse; background: white;
-            border-radius: 8px; overflow: hidden;
-        }
-        thead {
-            background: var(--ksc-light);
-        }
-        th {
-            padding: 1rem; text-align: left; font-weight: 600;
-            color: var(--ksc-primary); font-size: 0.875rem;
-            text-transform: uppercase; letter-spacing: 0.5px;
-        }
-        td {
-            padding: 1rem; border-top: 1px solid #f3f4f6;
-            font-size: 0.9375rem;
-        }
-        tr:hover { background: #fafafa; }
-        .badge {
-            padding: 0.25rem 0.75rem; border-radius: 12px;
-            font-size: 0.75rem; font-weight: 600;
-            display: inline-block;
-        }
-        .badge-success { background: #d1fae5; color: #065f46; }
-        .badge-warning { background: #fef3c7; color: #92400e; }
-        .badge-danger { background: #fee2e2; color: #991b1b; }
-        .badge-info { background: #dbeafe; color: #1e40af; }
-        
-        /* MODAL */
-        .modal {
-            display: none; position: fixed; top: 0; left: 0;
-            width: 100%; height: 100%; background: rgba(0,0,0,0.5);
-            z-index: 1000; align-items: center; justify-content: center;
-        }
-        .modal.active { display: flex; }
-        .modal-content {
-            background: white; border-radius: 16px;
-            max-width: 900px; width: 90%; max-height: 90vh;
-            overflow-y: auto; position: relative;
-        }
-        .modal-header {
-            padding: 1.5rem 2rem; border-bottom: 1px solid #e7e5e4;
-            display: flex; justify-content: space-between; align-items: center;
-            position: sticky; top: 0; background: white; z-index: 10;
-        }
-        .modal-title { font-size: 1.5rem; font-weight: 600; color: var(--ksc-primary); }
-        .modal-close {
-            background: none; border: none; font-size: 1.5rem;
-            cursor: pointer; color: var(--ksc-secondary);
-            width: 32px; height: 32px; display: flex;
-            align-items: center; justify-content: center;
-            border-radius: 50%; transition: all 0.2s;
-        }
-        .modal-close:hover { background: var(--ksc-light); }
-        .modal-body { padding: 2rem; }
-        .modal-footer {
-            padding: 1.5rem 2rem; border-top: 1px solid #e7e5e4;
-            display: flex; justify-content: flex-end; gap: 1rem;
-            position: sticky; bottom: 0; background: white;
-        }
-        
-        /* FORMS */
-        .form-group { margin-bottom: 1.5rem; }
-        .form-label {
-            display: block; margin-bottom: 0.5rem; font-weight: 500;
-            color: var(--ksc-primary); font-size: 0.9375rem;
-        }
-        .form-label.required::after {
-            content: '*'; color: var(--danger); margin-left: 0.25rem;
-        }
-        .form-input, .form-select, .form-textarea {
-            width: 100%; padding: 0.75rem; border: 1px solid #d1d5db;
-            border-radius: 6px; font-size: 0.9375rem;
-            transition: border-color 0.2s;
-        }
-        .form-input:focus, .form-select:focus, .form-textarea:focus {
-            outline: none; border-color: var(--ksc-primary);
-        }
-        .form-textarea { min-height: 100px; resize: vertical; }
-        .form-row {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-        }
-        .form-help {
-            font-size: 0.875rem; color: var(--ksc-secondary);
-            margin-top: 0.25rem;
-        }
-        .form-error {
-            font-size: 0.875rem; color: var(--danger);
-            margin-top: 0.25rem; display: none;
-        }
-        .form-group.error .form-error { display: block; }
-        .form-group.error .form-input,
-        .form-group.error .form-select,
-        .form-group.error .form-textarea {
-            border-color: var(--danger);
-        }
-        
-        /* TABS */
+
+        .header h1 { font-size: 1.125rem; font-weight: 600; }
+        .header p { font-size: 0.875rem; color: var(--secondary); margin-top: 0.125rem; }
+
         .tabs {
-            display: flex; gap: 0.5rem; border-bottom: 2px solid #e7e5e4;
+            display: flex;
+            gap: 0.25rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab {
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--secondary);
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .content {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+
+        .section {
+            background: white;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
             margin-bottom: 2rem;
         }
-        .tab {
-            padding: 0.75rem 1.5rem; background: none; border: none;
-            font-size: 0.9375rem; font-weight: 500; cursor: pointer;
-            color: var(--ksc-secondary); position: relative;
-            transition: all 0.2s;
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
         }
-        .tab:hover { color: var(--ksc-primary); }
-        .tab.active {
-            color: var(--ksc-primary); font-weight: 600;
+
+        .section-header h2 {
+            font-size: 1rem;
+            font-weight: 600;
         }
-        .tab.active::after {
-            content: ''; position: absolute; bottom: -2px; left: 0; right: 0;
-            height: 2px; background: var(--ksc-primary);
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
         }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        
-        /* TIMELINE */
-        .timeline {
-            position: relative; padding-left: 2rem;
-        }
-        .timeline::before {
-            content: ''; position: absolute; left: 8px; top: 0; bottom: 0;
-            width: 2px; background: var(--ksc-accent);
-        }
-        .timeline-item {
-            position: relative; margin-bottom: 2rem;
-            padding-left: 1.5rem;
-        }
-        .timeline-item::before {
-            content: ''; position: absolute; left: -2rem; top: 0;
-            width: 16px; height: 16px; border-radius: 50%;
-            background: white; border: 3px solid var(--ksc-primary);
-        }
-        .timeline-content {
-            background: white; padding: 1rem; border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .timeline-date {
-            font-size: 0.875rem; color: var(--ksc-secondary);
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
             margin-bottom: 0.5rem;
+            color: var(--secondary);
         }
-        .timeline-title {
-            font-weight: 600; margin-bottom: 0.5rem;
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 0.625rem;
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            font-size: 0.9375rem;
         }
-        .timeline-desc {
-            font-size: 0.9375rem; color: var(--ksc-secondary);
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--accent);
         }
-        
-        /* CHECKLIST */
-        .checklist-item {
-            padding: 0.75rem; background: white;
-            border: 1px solid #e7e5e4; border-radius: 6px;
-            margin-bottom: 0.5rem; display: flex;
-            align-items: center; gap: 1rem;
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+            font-family: inherit;
         }
-        .checklist-item input[type="checkbox"] {
-            width: 20px; height: 20px; cursor: pointer;
-        }
-        .checklist-item label {
-            flex: 1; cursor: pointer; font-size: 0.9375rem;
-        }
-        .checklist-item.checked {
-            background: #f0fdf4; border-color: var(--success);
-        }
-        
-        /* ALERTS */
-        .alert {
-            padding: 1rem 1.5rem; border-radius: 8px;
-            margin-bottom: 1rem; display: flex;
-            align-items: center; gap: 1rem;
-        }
-        .alert-success {
-            background: #d1fae5; color: #065f46;
-            border-left: 4px solid var(--success);
-        }
-        .alert-warning {
-            background: #fef3c7; color: #92400e;
-            border-left: 4px solid var(--warning);
-        }
-        .alert-danger {
-            background: #fee2e2; color: #991b1b;
-            border-left: 4px solid var(--danger);
-        }
-        .alert-info {
-            background: #dbeafe; color: #1e40af;
-            border-left: 4px solid #3b82f6;
-        }
-        
-        /* LOADING */
-        .loading {
-            text-align: center; padding: 3rem;
-        }
-        .spinner {
-            border: 3px solid var(--ksc-light);
-            border-top: 3px solid var(--ksc-primary);
-            border-radius: 50%; width: 40px; height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        /* EMPTY STATE */
-        .empty-state {
-            text-align: center; padding: 4rem 2rem;
-        }
-        .empty-icon {
-            font-size: 4rem; color: var(--ksc-accent);
-            margin-bottom: 1rem;
-        }
-        .empty-title {
-            font-size: 1.25rem; font-weight: 600;
-            margin-bottom: 0.5rem; color: var(--ksc-primary);
-        }
-        .empty-desc {
-            color: var(--ksc-secondary); margin-bottom: 1.5rem;
-        }
-        
-        /* RISK MATRIX */
-        .risk-matrix {
-            display: grid;
-            grid-template-columns: auto repeat(5, 1fr);
-            gap: 0.25rem; margin: 1.5rem 0;
-        }
-        .risk-cell {
-            padding: 1rem; text-align: center;
-            border-radius: 4px; font-weight: 600;
-            min-width: 80px;
-        }
-        .risk-label {
-            padding: 0.75rem 0.5rem; font-size: 0.875rem;
-            font-weight: 600; display: flex;
-            align-items: center; justify-content: center;
-        }
-        .risk-low { background: #d1fae5; color: #065f46; }
-        .risk-medium { background: #fef3c7; color: #92400e; }
-        .risk-high { background: #fed7aa; color: #9a3412; }
-        .risk-extreme { background: #fee2e2; color: #991b1b; }
-        
-        /* PRIORITY INDICATORS */
-        .priority-high {
-            color: var(--danger); font-weight: 600;
-        }
-        .priority-medium {
-            color: var(--warning); font-weight: 600;
-        }
-        .priority-low {
-            color: var(--success); font-weight: 600;
-        }
-        
-        /* RTW PLAN */
-        .rtw-phase {
-            background: white; border: 1px solid #e7e5e4;
-            border-radius: 8px; padding: 1.5rem;
-            margin-bottom: 1rem;
-        }
-        .rtw-phase-header {
-            display: flex; justify-content: space-between;
-            align-items: center; margin-bottom: 1rem;
-        }
-        .rtw-phase-title {
-            font-weight: 600; font-size: 1.125rem;
-        }
-        .rtw-hours {
-            font-size: 1.5rem; font-weight: 700;
-            color: var(--ksc-primary);
-        }
-        
-        /* EVIDENCE GALLERY */
-        .evidence-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 1rem; margin: 1rem 0;
-        }
-        .evidence-item {
-            position: relative; border-radius: 8px;
-            overflow: hidden; aspect-ratio: 1;
-            background: var(--ksc-light);
+
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border: none;
+            border-radius: 2px;
+            font-size: 0.875rem;
+            font-weight: 500;
             cursor: pointer;
         }
-        .evidence-item img {
-            width: 100%; height: 100%; object-fit: cover;
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: #16a34a; color: white; }
+        .btn-danger { background: #dc2626; color: white; }
+        .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--secondary); }
+        .btn-small { padding: 0.375rem 0.875rem; font-size: 0.8125rem; }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
         }
-        .evidence-item:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+
+        .data-table th {
+            background: var(--bg);
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.75rem;
+            color: var(--secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
         }
-        
-        /* HIDE/SHOW */
-        .hidden { display: none !important; }
-        
-        /* RESPONSIVE */
-        @media (max-width: 768px) {
-            .container { flex-direction: column; }
-            .sidebar {
-                width: 100%; height: auto; position: static;
-                border-right: none; border-bottom: 1px solid #e7e5e4;
-            }
-            .main-content { padding: 1rem; }
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-            .modal-content {
-                width: 95%; max-height: 95vh;
-            }
-            .form-row {
-                grid-template-columns: 1fr;
-            }
+
+        .data-table td {
+            padding: 0.875rem 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table tr:hover { background: var(--bg); }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.625rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border-radius: 2px;
+        }
+
+        .badge-open { background: #fef3c7; color: #92400e; }
+        .badge-closed { background: #d1fae5; color: #065f46; }
+        .badge-high { background: #fee2e2; color: #991b1b; }
+
+        .class-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .class-btn {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            background: white;
+            border-radius: 2px;
+            cursor: pointer;
+            font-size: 0.8125rem;
+            font-weight: 500;
+        }
+
+        .class-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-box {
+            background: var(--bg);
+            padding: 1rem;
+            border-left: 2px solid var(--primary);
+        }
+
+        .stat-value {
+            font-size: 1.875rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: var(--secondary);
+        }
+
+        .alert {
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            border-left: 2px solid;
+            font-size: 0.875rem;
+        }
+
+        .alert-info { background: #eff6ff; border-color: #3b82f6; color: #1e40af; }
+
+        .investigation-panel {
+            background: white;
+            border: 1px solid var(--border);
+            padding: 2rem;
+            margin-top: 2rem;
+            display: none;
+        }
+
+        .investigation-panel.active { display: block; }
+
+        .icam-section {
+            margin-bottom: 2rem;
+        }
+
+        .icam-section h3 {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        .prompt {
+            background: #fffbeb;
+            border-left: 2px solid #f59e0b;
+            padding: 0.875rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.875rem;
+            font-style: italic;
+            color: #92400e;
+        }
+
+        .add-form {
+            background: white;
+            border: 1px solid var(--border);
+            padding: 2rem;
+            margin-top: 1.5rem;
+            display: none;
+        }
+
+        .add-form.active { display: block; }
+
+        .report-preview {
+            background: white;
+            border: 1px solid var(--border);
+            padding: 2rem;
+            margin-top: 2rem;
+            display: none;
+        }
+
+        .report-preview.active { display: block; }
+
+        .report-header {
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .report-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .report-subtitle {
+            font-size: 0.875rem;
+            color: var(--secondary);
+        }
+
+        .report-section {
+            margin-bottom: 2rem;
+        }
+
+        .report-section h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--primary);
+        }
+
+        .report-content {
+            line-height: 1.8;
+            color: var(--primary);
+        }
+
+        .wclaim-section {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 4px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .wclaim-section.active { display: block; }
+
+        .wclaim-section h4 {
+            color: #991b1b;
+            margin-bottom: 1rem;
+            font-size: 1rem;
         }
     </style>
 </head>
 <body>
-    <!-- HEADER -->
-    <div class="header">
-        <div class="logo-section">
-            <div class="logo-circle">KSC</div>
-            <div class="app-title">
-                <h1>Manager Backend</h1>
-                <p>WHS Management System</p>
+    <header class="header">
+        <div class="header-content">
+            <div class="header-top">
+                <div>
+                    <h1>Manager Backend</h1>
+                    <p id="client-name">ABC Construction Pty Ltd</p>
+                </div>
             </div>
+            <nav class="tabs">
+                <button class="tab active" onclick="showTab(event, 'incidents')">Incidents Register</button>
+                <button class="tab" onclick="showTab(event, 'hours')">Hours Worked</button>
+                <button class="tab" onclick="showTab(event, 'actions')">Corrective Actions</button>
+                <button class="tab" onclick="showTab(event, 'add')">Add Records</button>
+            </nav>
         </div>
-        <div class="user-info">
-            <div class="user-avatar">👤</div>
-            <span id="userName">WHS Manager</span>
-        </div>
-    </div>
+    </header>
 
-    <div class="container">
-        <!-- SIDEBAR -->
-        <div class="sidebar">
-            <div class="menu-item active" onclick="switchPage('dashboard')">
-                <span class="menu-icon">📊</span>
-                <span>Dashboard</span>
-            </div>
-            <div class="menu-item" onclick="switchPage('incidents')">
-                <span class="menu-icon">📝</span>
-                <span>Incidents Register</span>
-            </div>
-            <div class="menu-item" onclick="switchPage('hazards')">
-                <span class="menu-icon">⚠️</span>
-                <span>Hazards</span>
-            </div>
-            <div class="menu-item" onclick="switchPage('actions')">
-                <span class="menu-icon">✅</span>
-                <span>Corrective Actions</span>
-            </div>
-            <div class="menu-item" onclick="switchPage('swms')">
-                <span class="menu-icon">📋</span>
-                <span>SWMS Library</span>
-            </div>
-            <div class="menu-item" onclick="switchPage('inspections')">
-                <span class="menu-icon">🔍</span>
-                <span>Inspections</span>
-            </div>
-            <div class="menu-item" onclick="switchPage('workerscomp')">
-                <span class="menu-icon">🏥</span>
-                <span>Workers Comp</span>
-            </div>
-        </div>
-
-        <!-- MAIN CONTENT -->
-        <div class="main-content">
-            <!-- DASHBOARD PAGE -->
-            <div id="dashboardPage" class="page">
-                <div class="page-header">
-                    <h1 class="page-title">Dashboard</h1>
-                    <button class="btn btn-primary" onclick="refreshData()">🔄 Refresh Data</button>
+    <main class="content">
+        
+        <!-- INCIDENTS REGISTER TAB -->
+        <div id="tab-incidents" class="tab-pane active">
+            <div class="section">
+                <div class="section-header">
+                    <h2>Incidents Register</h2>
                 </div>
 
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-label">Open Incidents</div>
-                        <div class="stat-value" id="statOpenIncidents">0</div>
-                        <div class="stat-change">Last 30 days</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Active Hazards</div>
-                        <div class="stat-value" id="statActiveHazards">0</div>
-                        <div class="stat-change">Requires action</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Overdue Actions</div>
-                        <div class="stat-value" id="statOverdueActions">0</div>
-                        <div class="stat-change negative">⚠️ Needs attention</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Open WC Claims</div>
-                        <div class="stat-value" id="statOpenClaims">0</div>
-                        <div class="stat-change">Active claims</div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">Recent Activity</div>
-                    <div id="recentActivity" class="timeline">
-                        <div class="loading">
-                            <div class="spinner"></div>
-                            <p>Loading recent activity...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- INCIDENTS PAGE -->
-            <div id="incidentsPage" class="page hidden">
-                <div class="page-header">
-                    <h1 class="page-title">Incidents Register</h1>
-                    <button class="btn btn-primary" onclick="showCreateIncidentModal()">+ New Incident</button>
-                </div>
-
-                <div class="card">
-                    <div class="table-container">
-                        <table id="incidentsTable">
-                            <thead>
-                                <tr>
-                                    <th>Incident ID</th>
-                                    <th>Date</th>
-                                    <th>Type</th>
-                                    <th>Location</th>
-                                    <th>Severity</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="incidentsTableBody">
-                                <tr>
-                                    <td colspan="7" class="empty-state">
-                                        <div class="empty-icon">📝</div>
-                                        <div class="empty-title">No incidents yet</div>
-                                        <div class="empty-desc">Create your first incident report</div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- HAZARDS PAGE -->
-            <div id="hazardsPage" class="page hidden">
-                <div class="page-header">
-                    <h1 class="page-title">Hazards Register</h1>
-                    <button class="btn btn-primary" onclick="showCreateHazardModal()">+ New Hazard</button>
-                </div>
-
-                <div class="card">
-                    <div class="table-container">
-                        <table id="hazardsTable">
-                            <thead>
-                                <tr>
-                                    <th>Hazard ID</th>
-                                    <th>Date</th>
-                                    <th>Location</th>
-                                    <th>Description</th>
-                                    <th>Risk Rating</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="hazardsTableBody">
-                                <tr>
-                                    <td colspan="7" class="empty-state">
-                                        <div class="empty-icon">⚠️</div>
-                                        <div class="empty-title">No hazards reported</div>
-                                        <div class="empty-desc">Report hazards to prevent incidents</div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- CORRECTIVE ACTIONS PAGE -->
-            <div id="actionsPage" class="page hidden">
-                <div class="page-header">
-                    <h1 class="page-title">Corrective Actions</h1>
-                    <button class="btn btn-primary" onclick="showCreateActionModal()">+ New Action</button>
-                </div>
-
-                <div class="card">
-                    <div class="table-container">
-                        <table id="actionsTable">
-                            <thead>
-                                <tr>
-                                    <th>Action ID</th>
-                                    <th>Description</th>
-                                    <th>Priority</th>
-                                    <th>Responsible</th>
-                                    <th>Due Date</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="actionsTableBody">
-                                <tr>
-                                    <td colspan="7" class="empty-state">
-                                        <div class="empty-icon">✅</div>
-                                        <div class="empty-title">No actions yet</div>
-                                        <div class="empty-desc">Create actions to track improvements</div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SWMS PAGE -->
-            <div id="swmsPage" class="page hidden">
-                <div class="page-header">
-                    <h1 class="page-title">SWMS Library</h1>
-                    <button class="btn btn-primary" onclick="showUploadSWMSModal()">+ Upload SWMS</button>
-                </div>
-
-                <div class="card">
-                    <div class="table-container">
-                        <table id="swmsTable">
-                            <thead>
-                                <tr>
-                                    <th>SWMS ID</th>
-                                    <th>Title</th>
-                                    <th>Version</th>
-                                    <th>Status</th>
-                                    <th>Sign-Offs</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="swmsTableBody">
-                                <tr>
-                                    <td colspan="6" class="empty-state">
-                                        <div class="empty-icon">📋</div>
-                                        <div class="empty-title">No SWMS documents</div>
-                                        <div class="empty-desc">Upload your first SWMS</div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- INSPECTIONS PAGE -->
-            <div id="inspectionsPage" class="page hidden">
-                <div class="page-header">
-                    <h1 class="page-title">Site Inspections</h1>
-                </div>
-
-                <div class="card">
-                    <div class="table-container">
-                        <table id="inspectionsTable">
-                            <thead>
-                                <tr>
-                                    <th>Inspection ID</th>
-                                    <th>Date</th>
-                                    <th>Type</th>
-                                    <th>Location</th>
-                                    <th>Inspector</th>
-                                    <th>Score</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="inspectionsTableBody">
-                                <tr>
-                                    <td colspan="7" class="empty-state">
-                                        <div class="empty-icon">🔍</div>
-                                        <div class="empty-title">No inspections yet</div>
-                                        <div class="empty-desc">Inspections submitted via Field App</div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- WORKERS COMP PAGE -->
-            <div id="workerscompPage" class="page hidden">
-                <div class="page-header">
-                    <h1 class="page-title">Workers Compensation</h1>
-                    <button class="btn btn-primary" onclick="showCreateClaimModal()">+ New Claim</button>
-                </div>
-
-                <div class="card">
-                    <div class="table-container">
-                        <table id="workerscompTable">
-                            <thead>
-                                <tr>
-                                    <th>Claim #</th>
-                                    <th>Worker</th>
-                                    <th>Injury Date</th>
-                                    <th>Body Part</th>
-                                    <th>Status</th>
-                                    <th>Days Lost</th>
-                                    <th>Total Cost</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="workerscompTableBody">
-                                <tr>
-                                    <td colspan="8" class="empty-state">
-                                        <div class="empty-icon">🏥</div>
-                                        <div class="empty-title">No workers comp claims</div>
-                                        <div class="empty-desc">Create claims for injured workers</div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- CREATE INCIDENT MODAL -->
-    <div id="createIncidentModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title">Create New Incident</h2>
-                <button class="modal-close" onclick="closeModal('createIncidentModal')">×</button>
-            </div>
-            <div class="modal-body">
-                <form id="createIncidentForm">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label required">Date</label>
-                            <input type="date" class="form-input" id="incidentDate" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label required">Time</label>
-                            <input type="time" class="form-input" id="incidentTime" required>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label required">Location</label>
-                        <input type="text" class="form-input" id="incidentLocation" placeholder="Site/Area" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label required">Incident Type</label>
-                        <select class="form-select" id="incidentType" required>
-                            <option value="">Select type...</option>
-                            <option value="Slip/Trip/Fall">Slip/Trip/Fall</option>
-                            <option value="Struck by object">Struck by object</option>
-                            <option value="Manual handling">Manual handling</option>
-                            <option value="Cuts/Lacerations">Cuts/Lacerations</option>
-                            <option value="Burns">Burns</option>
-                            <option value="Chemical exposure">Chemical exposure</option>
-                            <option value="Electrical">Electrical</option>
-                            <option value="Motor vehicle">Motor vehicle</option>
-                            <option value="Fall from height">Fall from height</option>
-                            <option value="Caught in/between">Caught in/between</option>
-                            <option value="Environmental">Environmental (spill/release)</option>
-                            <option value="Violence/Aggression">Violence/Aggression</option>
-                            <option value="Property damage">Property damage</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label required">Was Anyone Injured?</label>
-                        <select class="form-select" id="wasInjured" onchange="toggleInjuryFields()" required>
-                            <option value="">Select...</option>
-                            <option value="Yes">Yes</option>
-                            <option value="No">No</option>
-                        </select>
-                    </div>
-
-                    <div id="injuryFields" class="hidden">
-                        <div class="form-group">
-                            <label class="form-label required">Injury Type</label>
-                            <select class="form-select" id="injuryType">
-                                <option value="">Select...</option>
-                                <option value="Notifiable Incident">Notifiable Incident</option>
-                                <option value="Lost Time Injury">Lost Time Injury</option>
-                                <option value="Medical Treatment">Medical Treatment</option>
-                                <option value="First Aid">First Aid</option>
-                                <option value="Near Miss">Near Miss</option>
-                            </select>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Body Part</label>
-                                <select class="form-select" id="bodyPart">
-                                    <option value="">Select...</option>
-                                    <option value="Head">Head</option>
-                                    <option value="Eyes">Eyes</option>
-                                    <option value="Face">Face</option>
-                                    <option value="Neck">Neck</option>
-                                    <option value="Back">Back</option>
-                                    <option value="Chest">Chest</option>
-                                    <option value="Arms">Arms</option>
-                                    <option value="Hands">Hands</option>
-                                    <option value="Fingers">Fingers</option>
-                                    <option value="Legs">Legs</option>
-                                    <option value="Knees">Knees</option>
-                                    <option value="Ankles">Ankles</option>
-                                    <option value="Feet">Feet</option>
-                                    <option value="Multiple">Multiple</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Nature of Injury</label>
-                                <select class="form-select" id="natureOfInjury">
-                                    <option value="">Select...</option>
-                                    <option value="Sprain/Strain">Sprain/Strain</option>
-                                    <option value="Fracture">Fracture</option>
-                                    <option value="Cut/Laceration">Cut/Laceration</option>
-                                    <option value="Bruising">Bruising</option>
-                                    <option value="Burn">Burn</option>
-                                    <option value="Crush">Crush</option>
-                                    <option value="Amputation">Amputation</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label required">Description</label>
-                        <textarea class="form-textarea" id="incidentDescription" 
-                                  placeholder="Describe what happened..." required></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Immediate Action Taken</label>
-                        <textarea class="form-textarea" id="immediateAction" 
-                                  placeholder="What actions were taken immediately?"></textarea>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label required">Reporter Name</label>
-                            <input type="text" class="form-input" id="reporterName" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label required">Reporter Position</label>
-                            <input type="text" class="form-input" id="reporterPosition" required>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('createIncidentModal')">Cancel</button>
-                <button class="btn btn-primary" onclick="submitIncident()">Create Incident</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ICAM INVESTIGATION MODAL -->
-    <div id="icamModal" class="modal">
-        <div class="modal-content" style="max-width: 1200px;">
-            <div class="modal-header">
-                <h2 class="modal-title">ICAM Investigation</h2>
-                <button class="modal-close" onclick="closeModal('icamModal')">×</button>
-            </div>
-            <div class="modal-body">
-                <div class="tabs">
-                    <button class="tab active" onclick="switchICAMTab('timeline')">Timeline</button>
-                    <button class="tab" onclick="switchICAMTab('evidence')">Evidence</button>
-                    <button class="tab" onclick="switchICAMTab('factors')">Contributing Factors</button>
-                    <button class="tab" onclick="switchICAMTab('rootcause')">Root Cause</button>
-                    <button class="tab" onclick="switchICAMTab('recommendations')">Recommendations</button>
-                </div>
-
-                <!-- TIMELINE TAB -->
-                <div id="timelineTab" class="tab-content active">
-                    <div class="alert alert-info">
-                        <strong>ℹ️ Timeline Builder</strong> - Build chronological sequence of events leading to the incident
-                    </div>
-
-                    <button class="btn btn-primary btn-sm" onclick="addTimelineEvent()">+ Add Event</button>
-
-                    <div id="timelineEvents" style="margin-top: 2rem;">
-                        <div class="empty-state">
-                            <div class="empty-icon">📅</div>
-                            <div class="empty-title">No timeline events yet</div>
-                            <div class="empty-desc">Add events to build incident timeline</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- EVIDENCE TAB -->
-                <div id="evidenceTab" class="tab-content">
-                    <div class="alert alert-info">
-                        <strong>ℹ️ Evidence Management</strong> - Collect all evidence related to the investigation
-                    </div>
-
-                    <button class="btn btn-primary btn-sm" onclick="addEvidence()">+ Add Evidence</button>
-
-                    <div id="evidenceList" style="margin-top: 2rem;">
-                        <div class="empty-state">
-                            <div class="empty-icon">📎</div>
-                            <div class="empty-title">No evidence added</div>
-                            <div class="empty-desc">Upload photos, documents, witness statements</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- CONTRIBUTING FACTORS TAB -->
-                <div id="factorsTab" class="tab-content">
-                    <div class="alert alert-info">
-                        <strong>ℹ️ Contributing Factors Analysis</strong> - Identify all factors that contributed to the incident
-                    </div>
-
-                    <div class="form-group">
-                        <div class="checklist-item">
-                            <input type="checkbox" id="factor1">
-                            <label for="factor1"><strong>Equipment/Tools:</strong> Faulty, missing, or inappropriate equipment</label>
-                        </div>
-                        <div class="checklist-item">
-                            <input type="checkbox" id="factor2">
-                            <label for="factor2"><strong>Training/Competence:</strong> Inadequate training or skill level</label>
-                        </div>
-                        <div class="checklist-item">
-                            <input type="checkbox" id="factor3">
-                            <label for="factor3"><strong>Procedures:</strong> Missing, unclear, or not followed procedures</label>
-                        </div>
-                        <div class="checklist-item">
-                            <input type="checkbox" id="factor4">
-                            <label for="factor4"><strong>Communication:</strong> Poor or missing communication</label>
-                        </div>
-                        <div class="checklist-item">
-                            <input type="checkbox" id="factor5">
-                            <label for="factor5"><strong>Supervision:</strong> Inadequate supervision or monitoring</label>
-                        </div>
-                        <div class="checklist-item">
-                            <input type="checkbox" id="factor6">
-                            <label for="factor6"><strong>Work Environment:</strong> Poor lighting, noise, weather conditions</label>
-                        </div>
-                        <div class="checklist-item">
-                            <input type="checkbox" id="factor7">
-                            <label for="factor7"><strong>PPE:</strong> Missing, incorrect, or faulty PPE</label>
-                        </div>
-                        <div class="checklist-item">
-                            <input type="checkbox" id="factor8">
-                            <label for="factor8"><strong>Fatigue:</strong> Worker tiredness or overwork</label>
-                        </div>
-                        <div class="checklist-item">
-                            <input type="checkbox" id="factor9">
-                            <label for="factor9"><strong>Time Pressure:</strong> Rushed work or tight deadlines</label>
-                        </div>
-                        <div class="checklist-item">
-                            <input type="checkbox" id="factor10">
-                            <label for="factor10"><strong>Maintenance:</strong> Poor or missing maintenance</label>
-                        </div>
-                        <div class="checklist-item">
-                            <input type="checkbox" id="factor11">
-                            <label for="factor11"><strong>Design:</strong> Poor design of equipment or workspace</label>
-                        </div>
-                        <div class="checklist-item">
-                            <input type="checkbox" id="factor12">
-                            <label for="factor12"><strong>Hazard Identification:</strong> Hazard not identified or assessed</label>
-                        </div>
-                        <div class="checklist-item">
-                            <input type="checkbox" id="factor13">
-                            <label for="factor13"><strong>Risk Assessment:</strong> Inadequate risk assessment</label>
-                        </div>
-                        <div class="checklist-item">
-                            <input type="checkbox" id="factor14">
-                            <label for="factor14"><strong>Change Management:</strong> Changes not properly managed</label>
-                        </div>
-                        <div class="checklist-item">
-                            <input type="checkbox" id="factor15">
-                            <label for="factor15"><strong>Organizational Culture:</strong> Poor safety culture</label>
-                        </div>
-                        <div class="checklist-item">
-                            <input type="checkbox" id="factor16">
-                            <label for="factor16"><strong>Resources:</strong> Insufficient resources (time, budget, people)</label>
-                        </div>
-                        <div class="checklist-item">
-                            <input type="checkbox" id="factor17">
-                            <label for="factor17"><strong>External Factors:</strong> Contractor, weather, third parties</label>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ROOT CAUSE TAB -->
-                <div id="rootcauseTab" class="tab-content">
-                    <div class="alert alert-info">
-                        <strong>ℹ️ 5 Whys Analysis</strong> - Dig deeper to find root causes
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label required">Problem Statement</label>
-                        <textarea class="form-textarea" id="problemStatement" 
-                                  placeholder="Clearly state what happened..."></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Why 1: Why did this happen?</label>
-                        <input type="text" class="form-input" id="why1" placeholder="First reason...">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Why 2: Why did that happen?</label>
-                        <input type="text" class="form-input" id="why2" placeholder="Dig deeper...">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Why 3: Why did that happen?</label>
-                        <input type="text" class="form-input" id="why3" placeholder="Keep digging...">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Why 4: Why did that happen?</label>
-                        <input type="text" class="form-input" id="why4" placeholder="Almost there...">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Why 5: Why did that happen?</label>
-                        <input type="text" class="form-input" id="why5" placeholder="Root cause...">
-                    </div>
-
-                    <div class="alert alert-success">
-                        <strong>✓ Root Cause Identified:</strong> The answer to Why 5 is typically your root cause
-                    </div>
-                </div>
-
-                <!-- RECOMMENDATIONS TAB -->
-                <div id="recommendationsTab" class="tab-content">
-                    <div class="alert alert-info">
-                        <strong>ℹ️ Corrective & Preventive Actions</strong> - Define actions to prevent recurrence
-                    </div>
-
-                    <button class="btn btn-primary btn-sm" onclick="addRecommendation()">+ Add Recommendation</button>
-
-                    <div id="recommendationsList" style="margin-top: 2rem;">
-                        <div class="empty-state">
-                            <div class="empty-icon">💡</div>
-                            <div class="empty-title">No recommendations yet</div>
-                            <div class="empty-desc">Add corrective actions to prevent recurrence</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('icamModal')">Cancel</button>
-                <button class="btn btn-success" onclick="saveICAMInvestigation()">Save Investigation</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- WORKERS COMP CLAIM MODAL -->
-    <div id="createClaimModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title">Create Workers Compensation Claim</h2>
-                <button class="modal-close" onclick="closeModal('createClaimModal')">×</button>
-            </div>
-            <div class="modal-body">
-                <form id="createClaimForm">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label required">Claim Number</label>
-                            <input type="text" class="form-input" id="claimNumber" 
-                                   placeholder="e.g., WC-2026-001" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Link to Incident</label>
-                            <select class="form-select" id="claimIncidentLink">
-                                <option value="">Select incident...</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label required">Injured Worker</label>
-                            <input type="text" class="form-input" id="injuredWorker" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label required">Date of Injury</label>
-                            <input type="date" class="form-input" id="injuryDate" required>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label required">Body Part</label>
-                            <select class="form-select" id="claimBodyPart" required>
-                                <option value="">Select...</option>
-                                <option value="Back">Back</option>
-                                <option value="Hand">Hand</option>
-                                <option value="Leg">Leg</option>
-                                <option value="Arm">Arm</option>
-                                <option value="Shoulder">Shoulder</option>
-                                <option value="Knee">Knee</option>
-                                <option value="Ankle">Ankle</option>
-                                <option value="Other">Other</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label required">Nature of Injury</label>
-                            <select class="form-select" id="claimNatureOfInjury" required>
-                                <option value="">Select...</option>
-                                <option value="Sprain/Strain">Sprain/Strain</option>
-                                <option value="Fracture">Fracture</option>
-                                <option value="Cut/Laceration">Cut/Laceration</option>
-                                <option value="Crush">Crush</option>
-                                <option value="Burn">Burn</option>
-                                <option value="Other">Other</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label required">Claim Status</label>
-                        <select class="form-select" id="claimStatus" required>
-                            <option value="Lodged">Lodged</option>
-                            <option value="Accepted">Accepted</option>
-                            <option value="Rejected">Rejected</option>
-                            <option value="Medical Only">Medical Only</option>
-                            <option value="Lost Time">Lost Time</option>
-                            <option value="Closed">Closed</option>
-                        </select>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Weekly Benefits ($)</label>
-                            <input type="number" class="form-input" id="weeklyBenefits" 
-                                   placeholder="0.00" step="0.01">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Medical Costs ($)</label>
-                            <input type="number" class="form-input" id="medicalCosts" 
-                                   placeholder="0.00" step="0.01">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Days Lost</label>
-                        <input type="number" class="form-input" id="daysLost" placeholder="0">
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('createClaimModal')">Cancel</button>
-                <button class="btn btn-primary" onclick="submitClaim()">Create Claim</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- RTW PLAN MODAL -->
-    <div id="rtwPlanModal" class="modal">
-        <div class="modal-content" style="max-width: 1000px;">
-            <div class="modal-header">
-                <h2 class="modal-title">Return to Work Plan</h2>
-                <button class="modal-close" onclick="closeModal('rtwPlanModal')">×</button>
-            </div>
-            <div class="modal-body">
                 <div class="alert alert-info">
-                    <strong>ℹ️ RTW Planning</strong> - Create graduated return to work plan for injured worker
+                    Classify incidents, assign investigations, and manage workers compensation claims.
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label required">Medical Clearance Date</label>
-                    <input type="date" class="form-input" id="rtwMedicalClearance">
-                    <p class="form-help">Date doctor cleared worker to return to work</p>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label required">Suitable Duties</label>
-                    <textarea class="form-textarea" id="rtwSuitableDuties" 
-                              placeholder="List suitable duties worker can perform with restrictions..."></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label required">Restrictions</label>
-                    <textarea class="form-textarea" id="rtwRestrictions" 
-                              placeholder="e.g., No lifting >5kg, No working at heights, Light duties only..."></textarea>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">Graduated Hours Plan</div>
-                    
-                    <div class="rtw-phase">
-                        <div class="rtw-phase-header">
-                            <div class="rtw-phase-title">Week 1</div>
-                            <div class="rtw-hours">4 hrs/day</div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Start Date</label>
-                                <input type="date" class="form-input" id="rtwWeek1Start">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Review Date</label>
-                                <input type="date" class="form-input" id="rtwWeek1Review">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Notes</label>
-                            <textarea class="form-input" id="rtwWeek1Notes" rows="2" 
-                                      placeholder="Progress notes, concerns, adjustments..."></textarea>
-                        </div>
+                <div class="stats-row">
+                    <div class="stat-box">
+                        <div class="stat-value">12</div>
+                        <div class="stat-label">Total Incidents YTD</div>
                     </div>
-
-                    <div class="rtw-phase">
-                        <div class="rtw-phase-header">
-                            <div class="rtw-phase-title">Week 2-3</div>
-                            <div class="rtw-hours">6 hrs/day</div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Start Date</label>
-                                <input type="date" class="form-input" id="rtwWeek2Start">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Review Date</label>
-                                <input type="date" class="form-input" id="rtwWeek2Review">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Notes</label>
-                            <textarea class="form-input" id="rtwWeek2Notes" rows="2"></textarea>
-                        </div>
+                    <div class="stat-box">
+                        <div class="stat-value">8</div>
+                        <div class="stat-label">Investigations Completed</div>
                     </div>
-
-                    <div class="rtw-phase">
-                        <div class="rtw-phase-header">
-                            <div class="rtw-phase-title">Week 4+</div>
-                            <div class="rtw-hours">8 hrs/day</div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">Target Full RTW Date</label>
-                                <input type="date" class="form-input" id="rtwFullDate">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Actual RTW Date</label>
-                                <input type="date" class="form-input" id="rtwActualDate">
-                            </div>
-                        </div>
+                    <div class="stat-box">
+                        <div class="stat-value">3</div>
+                        <div class="stat-label">Workers Comp Claims</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">2</div>
+                        <div class="stat-label">Notifiable Incidents</div>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Overall Progress Notes</label>
-                    <textarea class="form-textarea" id="rtwProgressNotes" 
-                              placeholder="Track overall progress, challenges, successes..."></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('rtwPlanModal')">Cancel</button>
-                <button class="btn btn-success" onclick="saveRTWPlan()">Save RTW Plan</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- CREATE HAZARD MODAL -->
-    <div id="createHazardModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title">Create New Hazard</h2>
-                <button class="modal-close" onclick="closeModal('createHazardModal')">×</button>
-            </div>
-            <div class="modal-body">
-                <form id="createHazardForm">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label required">Date Identified</label>
-                            <input type="date" class="form-input" id="hazardDate" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label required">Location</label>
-                            <input type="text" class="form-input" id="hazardLocation" required>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label required">Hazard Description</label>
-                        <textarea class="form-textarea" id="hazardDescription" 
-                                  placeholder="Describe the hazard..." required></textarea>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-header">Risk Assessment</div>
-                        
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label required">Likelihood</label>
-                                <select class="form-select" id="hazardLikelihood" onchange="calculateRisk()" required>
-                                    <option value="">Select...</option>
-                                    <option value="Rare">Rare (1)</option>
-                                    <option value="Unlikely">Unlikely (2)</option>
-                                    <option value="Possible">Possible (3)</option>
-                                    <option value="Likely">Likely (4)</option>
-                                    <option value="Almost Certain">Almost Certain (5)</option>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Date</th>
+                            <th>Location</th>
+                            <th>Description</th>
+                            <th>Classification</th>
+                            <th>Assigned To</th>
+                            <th>W/Comp</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>INC-2026-034</td>
+                            <td>08/05/2026</td>
+                            <td>Site 4</td>
+                            <td>Laceration to hand from saw</td>
+                            <td>
+                                <div class="class-group">
+                                    <button class="class-btn" onclick="classify(this, 'LTI')">LTI</button>
+                                    <button class="class-btn" onclick="classify(this, 'MTI')">MTI</button>
+                                    <button class="class-btn" onclick="classify(this, 'First Aid')">FA</button>
+                                </div>
+                            </td>
+                            <td>
+                                <select class="form-select" style="font-size: 0.8125rem; padding: 0.375rem;">
+                                    <option value="">Assign...</option>
+                                    <option>N. King (Safety Manager)</option>
+                                    <option>J. Smith (Safety Officer)</option>
+                                    <option>M. Johnson (Team Leader)</option>
                                 </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label required">Consequence</label>
-                                <select class="form-select" id="hazardConsequence" onchange="calculateRisk()" required>
-                                    <option value="">Select...</option>
-                                    <option value="Insignificant">Insignificant (1)</option>
-                                    <option value="Minor">Minor (2)</option>
-                                    <option value="Moderate">Moderate (3)</option>
-                                    <option value="Major">Major (4)</option>
-                                    <option value="Catastrophic">Catastrophic (5)</option>
+                            </td>
+                            <td>
+                                <button class="btn btn-danger btn-small" onclick="openWClaim('INC-2026-034')">Claim</button>
+                            </td>
+                            <td>
+                                <select class="form-select" style="font-size: 0.8125rem; padding: 0.375rem;" onchange="updateStatus(this, 'INC-2026-034')">
+                                    <option>Open</option>
+                                    <option>Closed</option>
                                 </select>
-                            </div>
-                        </div>
+                            </td>
+                            <td>
+                                <button class="btn btn-primary btn-small" onclick="openInvestigation('INC-2026-034')">Investigate</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>INC-2026-033</td>
+                            <td>07/05/2026</td>
+                            <td>Warehouse</td>
+                            <td>Back strain lifting materials</td>
+                            <td>
+                                <div class="class-group">
+                                    <button class="class-btn" onclick="classify(this, 'LTI')">LTI</button>
+                                    <button class="class-btn active" onclick="classify(this, 'MTI')">MTI</button>
+                                    <button class="class-btn" onclick="classify(this, 'First Aid')">FA</button>
+                                </div>
+                            </td>
+                            <td>
+                                <select class="form-select" style="font-size: 0.8125rem; padding: 0.375rem;">
+                                    <option value="">Assign...</option>
+                                    <option selected>N. King (Safety Manager)</option>
+                                    <option>J. Smith (Safety Officer)</option>
+                                    <option>M. Johnson (Team Leader)</option>
+                                </select>
+                            </td>
+                            <td>
+                                <button class="btn btn-danger btn-small" onclick="openWClaim('INC-2026-033')">Claim</button>
+                            </td>
+                            <td>
+                                <select class="form-select" style="font-size: 0.8125rem; padding: 0.375rem;" onchange="updateStatus(this, 'INC-2026-033')">
+                                    <option>Open</option>
+                                    <option selected>Closed</option>
+                                </select>
+                            </td>
+                            <td>
+                                <span class="badge badge-closed">Investigation Complete</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
-                        <div id="riskRatingDisplay" class="hidden">
-                            <div class="alert" id="riskAlert">
-                                <strong>Risk Rating:</strong> <span id="riskRatingText"></span>
-                            </div>
-                        </div>
+            <!-- WORKERS COMP CLAIM PANEL -->
+            <div id="wclaim-panel" class="wclaim-section">
+                <h4>⚠️ Workers Compensation Claim</h4>
+                <p style="margin-bottom: 1.5rem; font-size: 0.875rem; color: #991b1b;">
+                    Incident: <strong id="wclaim-id"></strong>
+                </p>
+
+                <div class="form-group">
+                    <label>Does this require a Workers Compensation claim?</label>
+                    <div class="class-group" style="max-width: 300px;">
+                        <button class="class-btn" onclick="toggleWClaimDetails(false)">No</button>
+                        <button class="class-btn" onclick="toggleWClaimDetails(true)">Yes</button>
+                    </div>
+                </div>
+
+                <div id="wclaim-details" style="display: none; margin-top: 1.5rem;">
+                    <div class="prompt">
+                        When was the worker first unable to attend work due to this injury? This is the start date for compensation calculations.
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label required">Recommended Controls</label>
-                        <textarea class="form-textarea" id="hazardControls" 
-                                  placeholder="What controls should be implemented?" required></textarea>
-                    </div>
-
-                    <div class="form-row">
+                    <div class="form-grid">
                         <div class="form-group">
-                            <label class="form-label required">Reported By</label>
-                            <input type="text" class="form-input" id="hazardReporter" required>
+                            <label>Claim Number</label>
+                            <input type="text" class="form-input" placeholder="WC-2026-xxxxx">
+                        </div>
+                        <div class="form-group">
+                            <label>Date Claim Lodged</label>
+                            <input type="date" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label>First Date Off Work</label>
+                            <input type="date" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label>Insurer</label>
+                            <input type="text" class="form-input" placeholder="e.g., Allianz, WorkCover">
                         </div>
                     </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('createHazardModal')">Cancel</button>
-                <button class="btn btn-primary" onclick="submitHazard()">Create Hazard</button>
-            </div>
-        </div>
-    </div>
 
-    <!-- CREATE ACTION MODAL -->
-    <div id="createActionModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title">Create Corrective Action</h2>
-                <button class="modal-close" onclick="closeModal('createActionModal')">×</button>
-            </div>
-            <div class="modal-body">
-                <form id="createActionForm">
                     <div class="form-group">
-                        <label class="form-label">Source</label>
-                        <select class="form-select" id="actionSource">
-                            <option value="">Select source...</option>
-                            <option value="Incident">Incident</option>
-                            <option value="Hazard">Hazard</option>
-                            <option value="Inspection">Inspection</option>
-                            <option value="Audit">Audit</option>
-                            <option value="Other">Other</option>
-                        </select>
+                        <label>Treating Doctor / Medical Provider</label>
+                        <input type="text" class="form-input">
+                    </div>
+
+                    <div class="prompt">
+                        Return to Work Planning (RTWP): What suitable duties can be offered? Include hours, tasks, restrictions, and timeframe.
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label required">Action Description</label>
-                        <textarea class="form-textarea" id="actionDescription" 
-                                  placeholder="Describe the corrective action required..." required></textarea>
+                        <label>Suitable Duties Plan</label>
+                        <textarea class="form-textarea" placeholder="e.g., Light duties 4hrs/day, no lifting >5kg, admin tasks only, review weekly..."></textarea>
                     </div>
 
-                    <div class="form-row">
+                    <div class="form-grid">
                         <div class="form-group">
-                            <label class="form-label required">Priority</label>
-                            <select class="form-select" id="actionPriority" required>
-                                <option value="">Select...</option>
-                                <option value="High">High</option>
-                                <option value="Medium">Medium</option>
-                                <option value="Low">Low</option>
+                            <label>Target RTW Date</label>
+                            <input type="date" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label>RTW Coordinator</label>
+                            <input type="text" class="form-input">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Medical Restrictions</label>
+                        <textarea class="form-textarea" style="min-height: 80px;" placeholder="Medical certificate restrictions..."></textarea>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button class="btn btn-primary">Save Claim Details</button>
+                    <button class="btn btn-secondary" onclick="closeWClaim()">Cancel</button>
+                </div>
+            </div>
+
+            <!-- ICAM INVESTIGATION PANEL -->
+            <div id="investigation-panel" class="investigation-panel">
+                <div class="section-header">
+                    <h2>ICAM Investigation</h2>
+                    <button class="btn btn-secondary btn-small" onclick="closeInvestigation()">Close</button>
+                </div>
+
+                <div class="alert alert-info">
+                    Investigating: <strong id="investigation-id"></strong>
+                </div>
+
+                <!-- INVESTIGATION ASSIGNMENT -->
+                <div class="icam-section">
+                    <h3>Investigation Team</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Lead Investigator</label>
+                            <select class="form-select">
+                                <option>N. King (Safety Manager)</option>
+                                <option>J. Smith (Safety Officer)</option>
+                                <option>M. Johnson (Team Leader)</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label class="form-label required">Due Date</label>
-                            <input type="date" class="form-input" id="actionDueDate" required>
+                            <label>Team Members</label>
+                            <input type="text" class="form-input" placeholder="Names separated by commas">
+                        </div>
+                        <div class="form-group">
+                            <label>Target Completion Date</label>
+                            <input type="date" class="form-input">
                         </div>
                     </div>
+                </div>
 
-                    <div class="form-group">
-                        <label class="form-label required">Responsible Person</label>
-                        <input type="text" class="form-input" id="actionResponsible" 
-                               placeholder="Who is responsible?" required>
+                <!-- 1. EVENT DETAILS -->
+                <div class="icam-section">
+                    <h3>1. Event Details & Timeline</h3>
+                    <div class="prompt">
+                        What happened? Describe the sequence of events leading to the incident in chronological order.
                     </div>
+                    <textarea class="form-textarea" id="icam-event" placeholder="Chronological sequence of events..."></textarea>
+                    
+                    <div class="form-grid" style="margin-top: 1rem;">
+                        <div class="form-group">
+                            <label>Date & Time of Incident</label>
+                            <input type="datetime-local" class="form-input" id="icam-datetime">
+                        </div>
+                        <div class="form-group">
+                            <label>Exact Location</label>
+                            <input type="text" class="form-input" id="icam-location">
+                        </div>
+                        <div class="form-group">
+                            <label>Activity Being Performed</label>
+                            <input type="text" class="form-input" id="icam-activity">
+                        </div>
+                    </div>
+                </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Status</label>
-                        <select class="form-select" id="actionStatus">
-                            <option value="Not Started">Not Started</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Completed">Completed</option>
-                        </select>
+                <!-- 2. IMMEDIATE CAUSES -->
+                <div class="icam-section">
+                    <h3>2. Immediate Causes (Acts & Conditions)</h3>
+                    <div class="prompt">
+                        What unsafe acts or unsafe conditions directly caused this incident?
                     </div>
-                </form>
+                    <textarea class="form-textarea" id="icam-immediate" placeholder="List all immediate contributing factors..."></textarea>
+                </div>
+
+                <!-- 3. TASK/ENVIRONMENT -->
+                <div class="icam-section">
+                    <h3>3. Task & Environmental Conditions</h3>
+                    <div class="prompt">
+                        What aspects of the task, tools, equipment, or environment contributed?
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Tools & Equipment Condition</label>
+                            <textarea class="form-textarea" style="min-height: 80px;" id="icam-tools"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Environmental Factors</label>
+                            <textarea class="form-textarea" style="min-height: 80px;" id="icam-environment" placeholder="Weather, lighting, noise..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. INDIVIDUAL FACTORS -->
+                <div class="icam-section">
+                    <h3>4. Individual/Team Factors</h3>
+                    <div class="prompt">
+                        What individual or team factors influenced the incident? (Experience, training, fatigue, communication)
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Training & Competency</label>
+                            <textarea class="form-textarea" style="min-height: 80px;" id="icam-training"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Communication Breakdown</label>
+                            <textarea class="form-textarea" style="min-height: 80px;" id="icam-communication"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. WORKPLACE FACTORS -->
+                <div class="icam-section">
+                    <h3>5. Workplace/Organisational Factors</h3>
+                    <div class="prompt">
+                        What workplace systems, procedures, or organisational factors contributed? Were there gaps in supervision, procedures, or risk assessments?
+                    </div>
+                    <textarea class="form-textarea" id="icam-workplace" placeholder="Procedures, supervision, planning, risk assessments..."></textarea>
+                </div>
+
+                <!-- 6. ROOT CAUSES -->
+                <div class="icam-section">
+                    <h3>6. Root Causes (Organisational)</h3>
+                    <div class="prompt">
+                        Why did the workplace factors exist? What organisational decisions, policies, or resource allocations allowed these conditions?
+                    </div>
+                    <textarea class="form-textarea" id="icam-root" placeholder="Management decisions, resource allocation, safety culture..."></textarea>
+                </div>
+
+                <!-- 7. PREVENTIVE ACTIONS -->
+                <div class="icam-section">
+                    <h3>7. Preventive & Corrective Actions</h3>
+                    <div class="prompt">
+                        What actions will prevent recurrence? Address each level of causation identified above.
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Immediate Actions (Completed)</label>
+                            <textarea class="form-textarea" style="min-height: 80px;" id="icam-immediate-actions"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Preventive Actions (To Prevent Recurrence)</label>
+                            <textarea class="form-textarea" style="min-height: 80px;" id="icam-preventive-actions"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+                    <button class="btn btn-primary" onclick="generateReport()">Generate Executive Report</button>
+                    <button class="btn btn-success">Save Investigation</button>
+                    <button class="btn btn-secondary" onclick="closeInvestigation()">Cancel</button>
+                </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('createActionModal')">Cancel</button>
-                <button class="btn btn-primary" onclick="submitAction()">Create Action</button>
+
+            <!-- EXECUTIVE REPORT PREVIEW -->
+            <div id="report-preview" class="report-preview">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <h2 style="font-size: 1.25rem; font-weight: 600;">Executive Report Preview</h2>
+                    <div>
+                        <button class="btn btn-primary btn-small" onclick="downloadReport()">Download PDF</button>
+                        <button class="btn btn-secondary btn-small" onclick="closeReport()">Close</button>
+                    </div>
+                </div>
+
+                <div class="report-header">
+                    <div class="report-title" id="report-title">Incident Investigation Report</div>
+                    <div class="report-subtitle" id="report-subtitle">Incident ID: INC-2026-034</div>
+                    <div class="report-subtitle" id="report-date">Date: 09 May 2026</div>
+                </div>
+
+                <div class="report-section">
+                    <h4>Executive Summary</h4>
+                    <div class="report-content" id="report-summary">
+                        <!-- Auto-generated summary will appear here -->
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <h4>Incident Overview</h4>
+                    <div class="report-content" id="report-overview">
+                        <!-- Auto-generated overview will appear here -->
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <h4>Root Cause Analysis</h4>
+                    <div class="report-content" id="report-causes">
+                        <!-- Auto-generated causes will appear here -->
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <h4>Corrective Actions</h4>
+                    <div class="report-content" id="report-actions">
+                        <!-- Auto-generated actions will appear here -->
+                    </div>
+                </div>
+
+                <div class="report-section">
+                    <h4>Recommendations</h4>
+                    <div class="report-content" id="report-recommendations">
+                        <!-- Auto-generated recommendations will appear here -->
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
+
+        <!-- HOURS WORKED TAB -->
+        <div id="tab-hours" class="tab-pane">
+            <div class="section">
+                <div class="section-header">
+                    <h2>Hours Worked Tracking</h2>
+                </div>
+
+                <div class="alert alert-info">
+                    Manager can override hours worked for TRIFR/LTIFR calculations.
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Hours This Month</label>
+                        <input type="number" class="form-input" value="45000" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Hours YTD (Calendar)</label>
+                        <input type="number" class="form-input" value="500000" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Hours YTD (Financial)</label>
+                        <input type="number" class="form-input" value="520000" min="0">
+                    </div>
+                </div>
+
+                <button class="btn btn-primary">Save Hours</button>
+            </div>
+        </div>
+
+        <!-- CORRECTIVE ACTIONS TAB -->
+        <div id="tab-actions" class="tab-pane">
+            <div class="section">
+                <div class="section-header">
+                    <h2>Corrective Actions</h2>
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Source</th>
+                            <th>Action Required</th>
+                            <th>Assigned To</th>
+                            <th>Due Date</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>CA-INC-034</td>
+                            <td>Incident</td>
+                            <td>Replace saw guard</td>
+                            <td>J. Smith</td>
+                            <td>15/05/2026</td>
+                            <td><span class="badge badge-high">High</span></td>
+                            <td><span class="badge badge-open">Open</span></td>
+                            <td><button class="btn btn-success btn-small">Close</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ADD RECORDS TAB -->
+        <div id="tab-add" class="tab-pane">
+            <div class="section">
+                <div class="section-header">
+                    <h2>Add New Records</h2>
+                </div>
+
+                <div style="display: flex; gap: 1rem;">
+                    <button class="btn btn-primary">+ Add Incident</button>
+                    <button class="btn btn-primary">+ Add Hazard</button>
+                    <button class="btn btn-primary">+ Add Action</button>
+                    <button class="btn btn-primary">+ Add NCR</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
 
     <script>
-        // CONFIGURATION
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw5p7dj6AL94zmurfdUFxLth2hd_zJ28zfbTyK17cwgnUDTNO87NSyZ76CxZHA4Zu_DUQ/exec';
-        
-        // GLOBAL DATA
-        let allData = {
-            incidents: [],
-            hazards: [],
-            actions: [],
-            swms: [],
-            inspections: [],
-            workerscomp: []
-        };
-
-        let currentIncidentForICAM = null;
-        let currentClaimForRTW = null;
-        // ========================================
+// ========================================
 // WORKERS COMP & INCIDENT DETAIL VIEWS
 // Paste this inside your existing <script> tag
 // Add AFTER your existing global variables
@@ -2007,855 +1393,121 @@ tbody.innerHTML = allData.workerscomp.map(claim => `
 
 /*
 tbody.innerHTML = allData.incidents.map(inc => `
-    <tr onclick="viewIncidentDetail('${inc['Incident ID'] || inc.IncidentID}')">
+    <tr onclick="viewIncidentDetail('${inc.IncidentID || inc['Incident ID']}')">
         <td><strong>${inc.IncidentID || inc['Incident ID'] || 'N/A'}</strong></td>
         ... rest of your existing code ...
     </tr>
 `).join('');
 */
 
-        // INITIALIZE
-        document.addEventListener('DOMContentLoaded', function() {
-            loadData();
-            setDefaultDates();
-        });
 
-        function setDefaultDates() {
-            const today = new Date().toISOString().split('T')[0];
-            const dateInputs = document.querySelectorAll('input[type="date"]');
-            dateInputs.forEach(input => {
-                if (!input.value && input.id.includes('Date') || input.id.includes('date')) {
-                    input.value = today;
-                }
-            });
-        }
+        const CLIENT_NAME = 'ABC Construction Pty Ltd';
+        document.getElementById('client-name').textContent = CLIENT_NAME;
 
-        // DATA LOADING
-        async function loadData() {
-            try {
-                const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getAllData`);
-                if (!response.ok) throw new Error('Network response was not ok');
-                
-                const data = await response.json();
-                allData = data;
-                
-                updateDashboard();
-                updateAllTables();
-            } catch (error) {
-                console.error('Error loading data:', error);
-                showAlert('Error connecting to Google Sheets. Using demo data.', 'warning');
-                loadDemoData();
-            }
-        }
-
-        function loadDemoData() {
-            allData = {
-                incidents: [
-                    {
-                        IncidentID: 'INC-2026-001',
-                        Date: '2026-05-01',
-                        Type: 'Slip/Trip/Fall',
-                        Location: 'Site A - Warehouse',
-                        InjuryType: 'First Aid',
-                        Status: 'Open'
-                    }
-                ],
-                hazards: [],
-                actions: [],
-                swms: [],
-                inspections: [],
-                workerscomp: []
-            };
-            updateDashboard();
-            updateAllTables();
-        }
-
-        async function refreshData() {
-            showAlert('Refreshing data...', 'info');
-            await loadData();
-            showAlert('Data refreshed successfully!', 'success');
-        }
-
-        // NAVIGATION
-        function switchPage(pageName) {
-            // Hide all pages
-            document.querySelectorAll('.page').forEach(page => page.classList.add('hidden'));
+        // TAB SWITCHING
+        function showTab(event, tabId) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
             
-            // Show selected page
-            document.getElementById(pageName + 'Page').classList.remove('hidden');
+            event.currentTarget.classList.add('active');
+            document.getElementById('tab-' + tabId).classList.add('active');
+        }
+
+        // CLASSIFICATION
+        function classify(btn, classification) {
+            const group = btn.parentElement;
+            group.querySelectorAll('.class-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            console.log('Classified as:', classification);
+        }
+
+        // STATUS UPDATE
+        function updateStatus(select, incidentId) {
+            const status = select.value;
+            console.log(`${incidentId} status updated to: ${status}`);
+            // Save to Google Sheets
+        }
+
+        // WORKERS COMP CLAIM
+        function openWClaim(incidentId) {
+            document.getElementById('wclaim-id').textContent = incidentId;
+            document.getElementById('wclaim-panel').classList.add('active');
+            window.scrollTo({ top: document.getElementById('wclaim-panel').offsetTop - 100, behavior: 'smooth' });
+        }
+
+        function toggleWClaimDetails(show) {
+            const details = document.getElementById('wclaim-details');
+            details.style.display = show ? 'block' : 'none';
+        }
+
+        function closeWClaim() {
+            document.getElementById('wclaim-panel').classList.remove('active');
+        }
+
+        // INVESTIGATION
+        function openInvestigation(incidentId) {
+            document.getElementById('investigation-id').textContent = incidentId;
+            document.getElementById('investigation-panel').classList.add('active');
+            window.scrollTo({ top: document.getElementById('investigation-panel').offsetTop - 100, behavior: 'smooth' });
+        }
+
+        function closeInvestigation() {
+            document.getElementById('investigation-panel').classList.remove('active');
+        }
+
+        // GENERATE EXECUTIVE REPORT
+        function generateReport() {
+            const incidentId = document.getElementById('investigation-id').textContent;
             
-            // Update menu
-            document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
-            event.target.closest('.menu-item').classList.add('active');
-        }
-
-        // MODAL MANAGEMENT
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('active');
-        }
-
-        function showModal(modalId) {
-            document.getElementById(modalId).classList.add('active');
-        }
-
-        // DASHBOARD
-        function updateDashboard() {
-            // Calculate stats
-            const openIncidents = allData.incidents.filter(i => i.Status !== 'Closed').length;
-            const activeHazards = allData.hazards.filter(h => h.Status !== 'Closed').length;
-            const overdueActions = allData.actions.filter(a => {
-                if (a.Status === 'Completed') return false;
-                const dueDate = new Date(a.DueDate);
-                return dueDate < new Date();
-            }).length;
-            const openClaims = allData.workerscomp.filter(c => c.ClaimStatus !== 'Closed').length;
-
-            // Update stat cards
-            document.getElementById('statOpenIncidents').textContent = openIncidents;
-            document.getElementById('statActiveHazards').textContent = activeHazards;
-            document.getElementById('statOverdueActions').textContent = overdueActions;
-            document.getElementById('statOpenClaims').textContent = openClaims;
-
-            // Update recent activity
-            updateRecentActivity();
-        }
-
-        function updateRecentActivity() {
-            const activityContainer = document.getElementById('recentActivity');
-            
-            // Combine all recent items
-            const recentItems = [];
-            
-            allData.incidents.forEach(inc => {
-                recentItems.push({
-                    date: inc.Date || inc.Timestamp,
-                    title: `Incident: ${inc.Type}`,
-                    description: `${inc.Location}`,
-                    type: 'incident'
-                });
-            });
-
-            // Sort by date
-            recentItems.sort((a, b) => new Date(b.date) - new Date(a.date));
-            
-            // Show top 5
-            const top5 = recentItems.slice(0, 5);
-            
-            if (top5.length === 0) {
-                activityContainer.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-icon">📊</div>
-                        <div class="empty-title">No recent activity</div>
-                        <div class="empty-desc">Activity will appear here as incidents, hazards, and actions are created</div>
-                    </div>
-                `;
-                return;
-            }
-
-            activityContainer.innerHTML = top5.map(item => `
-                <div class="timeline-item">
-                    <div class="timeline-content">
-                        <div class="timeline-date">${formatDate(item.date)}</div>
-                        <div class="timeline-title">${item.title}</div>
-                        <div class="timeline-desc">${item.description}</div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // TABLE UPDATES
-        function updateAllTables() {
-            updateIncidentsTable();
-            updateHazardsTable();
-            updateActionsTable();
-            updateWorkersCompTable();
-            updateSWMSTable();
-            updateInspectionsTable();
-        }
-
-        function updateIncidentsTable() {
-            const tbody = document.getElementById('incidentsTableBody');
-            
-            if (allData.incidents.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="7" class="empty-state">
-                            <div class="empty-icon">📝</div>
-                            <div class="empty-title">No incidents yet</div>
-                            <div class="empty-desc">Create your first incident report</div>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            tbody.innerHTML = allData.incidents.map(inc => `
-                <tr>
-                    <td><strong>${inc.IncidentID || inc['Incident ID'] || 'N/A'}</strong></td>
-                    <td>${formatDate(inc.Date)}</td>
-                    <td>${inc.Type || inc['Incident Type'] || 'N/A'}</td>
-                    <td>${inc.Location || 'N/A'}</td>
-                    <td><span class="badge ${getBadgeClass(inc.InjuryType || inc['Injury Type'])}">${inc.InjuryType || inc['Injury Type'] || 'N/A'}</span></td>
-                    <td><span class="badge ${getStatusBadgeClass(inc.Status)}">${inc.Status || 'Open'}</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-primary" onclick="showICAMModal('${inc.IncidentID || inc['Incident ID']}')">Investigate</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function updateHazardsTable() {
-            const tbody = document.getElementById('hazardsTableBody');
-            
-            if (allData.hazards.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="7" class="empty-state">
-                            <div class="empty-icon">⚠️</div>
-                            <div class="empty-title">No hazards reported</div>
-                            <div class="empty-desc">Report hazards to prevent incidents</div>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            tbody.innerHTML = allData.hazards.map(haz => `
-                <tr>
-                    <td><strong>${haz.HazardID || haz['Hazard ID'] || 'N/A'}</strong></td>
-                    <td>${formatDate(haz.Date)}</td>
-                    <td>${haz.Location || 'N/A'}</td>
-                    <td>${haz.HazardDescription || haz['Hazard Description'] || 'N/A'}</td>
-                    <td><span class="badge ${getRiskBadgeClass(haz.RiskRating || haz['Risk Rating'])}">${haz.RiskRating || haz['Risk Rating'] || 'N/A'}</span></td>
-                    <td><span class="badge ${getStatusBadgeClass(haz.Status)}">${haz.Status || 'Open'}</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-secondary" onclick="viewHazard('${haz.HazardID || haz['Hazard ID']}')">View</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function updateActionsTable() {
-            const tbody = document.getElementById('actionsTableBody');
-            
-            if (allData.actions.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="7" class="empty-state">
-                            <div class="empty-icon">✅</div>
-                            <div class="empty-title">No actions yet</div>
-                            <div class="empty-desc">Create actions to track improvements</div>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            tbody.innerHTML = allData.actions.map(action => `
-                <tr>
-                    <td><strong>${action.ActionID || action['Action ID'] || 'N/A'}</strong></td>
-                    <td>${action.ActionDescription || action['Action Description'] || 'N/A'}</td>
-                    <td><span class="priority-${(action.Priority || '').toLowerCase()}">${action.Priority || 'N/A'}</span></td>
-                    <td>${action.ResponsiblePerson || action['Responsible Person'] || 'N/A'}</td>
-                    <td>${formatDate(action.DueDate || action['Due Date'])}</td>
-                    <td><span class="badge ${getStatusBadgeClass(action.Status)}">${action.Status || 'Not Started'}</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-secondary" onclick="viewAction('${action.ActionID || action['Action ID']}')">View</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function updateWorkersCompTable() {
-            const tbody = document.getElementById('workerscompTableBody');
-            
-            if (allData.workerscomp.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="8" class="empty-state">
-                            <div class="empty-icon">🏥</div>
-                            <div class="empty-title">No workers comp claims</div>
-                            <div class="empty-desc">Create claims for injured workers</div>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            tbody.innerHTML = allData.workerscomp.map(claim => `
-                <tr>
-                    tbody.innerHTML = allData.workerscomp.map(claim => `
-    <tr onclick="viewWorkersCompDetail('${claim['Claim Number'] || claim.ClaimNumber}')">
-        <td><strong>${claim.ClaimNumber || claim['Claim Number'] || 'N/A'}</strong></td>
-        <td>${claim.InjuredWorker || claim['Injured Worker'] || 'N/A'}</td>
-        ...rest of your code stays exactly the same...
-    </tr>
-`).join('');
-                    <td><span class="badge ${getStatusBadgeClass(claim.ClaimStatus || claim['Claim Status'])}">${claim.ClaimStatus || claim['Claim Status'] || 'N/A'}</span></td>
-                    <td>${claim.DaysLost || claim['Days Lost'] || '0'}</td>
-                    <td>$${parseFloat(claim.TotalClaimCost || claim['Total Claim Cost'] || 0).toLocaleString()}</td>
-                    <td>
-                        <button class="btn btn-sm btn-primary" onclick="showRTWPlanModal('${claim.ClaimNumber || claim['Claim Number']}')">RTW Plan</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function updateSWMSTable() {
-            const tbody = document.getElementById('swmsTableBody');
-            
-            if (!allData.swms || allData.swms.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="6" class="empty-state">
-                            <div class="empty-icon">📋</div>
-                            <div class="empty-title">No SWMS documents</div>
-                            <div class="empty-desc">Upload your first SWMS</div>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            tbody.innerHTML = allData.swms.map(swms => `
-                <tr>
-                    <td><strong>${swms.SWMSID || swms['SWMS ID'] || 'N/A'}</strong></td>
-                    <td>${swms.SWMSTitle || swms['SWMS Title'] || 'N/A'}</td>
-                    <td>${swms.Version || '1.0'}</td>
-                    <td><span class="badge ${getStatusBadgeClass(swms.Status)}">${swms.Status || 'Active'}</span></td>
-                    <td>${swms.TotalSignOffs || swms['Total Sign Offs'] || '0'}</td>
-                    <td>
-                        <button class="btn btn-sm btn-secondary" onclick="viewSWMS('${swms.SWMSID || swms['SWMS ID']}')">View</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function updateInspectionsTable() {
-            const tbody = document.getElementById('inspectionsTableBody');
-            
-            if (!allData.inspections || allData.inspections.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="7" class="empty-state">
-                            <div class="empty-icon">🔍</div>
-                            <div class="empty-title">No inspections yet</div>
-                            <div class="empty-desc">Inspections submitted via Field App</div>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            tbody.innerHTML = allData.inspections.map(insp => `
-                <tr>
-                    <td><strong>${insp.InspectionID || insp['Inspection ID'] || 'N/A'}</strong></td>
-                    <td>${formatDate(insp.Date)}</td>
-                    <td>${insp.InspectionType || insp['Inspection Type'] || 'N/A'}</td>
-                    <td>${insp.Location || 'N/A'}</td>
-                    <td>${insp.InspectorName || insp['Inspector Name'] || 'N/A'}</td>
-                    <td>${insp.OverallScore || insp['Overall Score'] || 'N/A'}%</td>
-                    <td>
-                        <button class="btn btn-sm btn-secondary" onclick="viewInspection('${insp.InspectionID || insp['Inspection ID']}')">View</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        // INCIDENT FUNCTIONS
-        function showCreateIncidentModal() {
-            showModal('createIncidentModal');
-        }
-
-        function toggleInjuryFields() {
-            const wasInjured = document.getElementById('wasInjured').value;
-            const injuryFields = document.getElementById('injuryFields');
-            
-            if (wasInjured === 'Yes') {
-                injuryFields.classList.remove('hidden');
-                document.getElementById('injuryType').required = true;
-            } else {
-                injuryFields.classList.add('hidden');
-                document.getElementById('injuryType').required = false;
-            }
-        }
-
-        async function submitIncident() {
-            const form = document.getElementById('createIncidentForm');
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return;
-            }
-
-            const incidentData = {
-                Date: document.getElementById('incidentDate').value,
-                Time: document.getElementById('incidentTime').value,
-                Location: document.getElementById('incidentLocation').value,
-                'Incident Type': document.getElementById('incidentType').value,
-                'Was Anyone Injured': document.getElementById('wasInjured').value,
-                'Injury Type': document.getElementById('injuryType').value || '',
-                'Body Part': document.getElementById('bodyPart').value || '',
-                'Nature of Injury': document.getElementById('natureOfInjury').value || '',
-                Description: document.getElementById('incidentDescription').value,
-                'Immediate Action Taken': document.getElementById('immediateAction').value,
-                'Reporter Name': document.getElementById('reporterName').value,
-                'Reporter Position': document.getElementById('reporterPosition').value,
-                Status: 'Open',
-                Timestamp: new Date().toISOString()
+            // Collect all ICAM data
+            const data = {
+                event: document.getElementById('icam-event').value,
+                immediate: document.getElementById('icam-immediate').value,
+                tools: document.getElementById('icam-tools').value,
+                environment: document.getElementById('icam-environment').value,
+                training: document.getElementById('icam-training').value,
+                workplace: document.getElementById('icam-workplace').value,
+                root: document.getElementById('icam-root').value,
+                preventive: document.getElementById('icam-preventive-actions').value
             };
 
-            try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'submitIncident',
-                        data: incidentData
-                    })
-                });
+            // Generate executive summary
+            const summary = `This investigation examined ${incidentId} to identify root causes and preventive measures. The incident involved ${data.event || 'the described event'}. The investigation identified immediate causes, contributing factors across task/environmental and individual/team levels, and organisational root causes. Key corrective actions have been identified to prevent recurrence.`;
 
-                if (!response.ok) throw new Error('Failed to submit incident');
-                
-                showAlert('Incident created successfully!', 'success');
-                closeModal('createIncidentModal');
-                form.reset();
-                await loadData();
-            } catch (error) {
-                console.error('Error:', error);
-                showAlert('Error creating incident. Please try again.', 'danger');
-            }
+            // Generate overview
+            const overview = `<strong>Event Description:</strong><br>${data.event || 'To be completed'}<br><br><strong>Immediate Contributing Factors:</strong><br>${data.immediate || 'To be completed'}`;
+
+            // Generate causes
+            const causes = `<strong>Task & Environmental Factors:</strong><br>Tools/Equipment: ${data.tools || 'N/A'}<br>Environment: ${data.environment || 'N/A'}<br><br><strong>Individual/Team Factors:</strong><br>Training: ${data.training || 'N/A'}<br><br><strong>Workplace Factors:</strong><br>${data.workplace || 'To be completed'}<br><br><strong>Root Causes:</strong><br>${data.root || 'To be completed'}`;
+
+            // Generate actions
+            const actions = data.preventive || 'Preventive actions to be defined based on root cause analysis.';
+
+            // Generate recommendations
+            const recommendations = `Based on this investigation, it is recommended that:<br>1. All corrective actions be implemented within specified timeframes<br>2. Effectiveness of controls be verified through follow-up audits<br>3. Learnings be communicated across the organisation<br>4. Similar scenarios be reviewed for potential application of controls`;
+
+            // Populate report
+            document.getElementById('report-subtitle').textContent = `Incident ID: ${incidentId}`;
+            document.getElementById('report-summary').innerHTML = summary;
+            document.getElementById('report-overview').innerHTML = overview;
+            document.getElementById('report-causes').innerHTML = causes;
+            document.getElementById('report-actions').innerHTML = actions;
+            document.getElementById('report-recommendations').innerHTML = recommendations;
+
+            // Show report
+            document.getElementById('report-preview').classList.add('active');
+            window.scrollTo({ top: document.getElementById('report-preview').offsetTop - 100, behavior: 'smooth' });
         }
 
-        // ICAM INVESTIGATION
-        function showICAMModal(incidentId) {
-            currentIncidentForICAM = incidentId;
-            showModal('icamModal');
+        function closeReport() {
+            document.getElementById('report-preview').classList.remove('active');
         }
 
-        function switchICAMTab(tabName) {
-            // Hide all tabs
-            document.querySelectorAll('#icamModal .tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            document.querySelectorAll('#icamModal .tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-
-            // Show selected tab
-            document.getElementById(tabName + 'Tab').classList.add('active');
-            event.target.classList.add('active');
-        }
-
-        function addTimelineEvent() {
-            const eventsContainer = document.getElementById('timelineEvents');
-            
-            // Remove empty state if present
-            const emptyState = eventsContainer.querySelector('.empty-state');
-            if (emptyState) emptyState.remove();
-
-            const eventId = 'event_' + Date.now();
-            const eventHtml = `
-                <div class="card" id="${eventId}" style="margin-bottom: 1rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: start;">
-                        <div style="flex: 1;">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label">Date</label>
-                                    <input type="date" class="form-input" value="${new Date().toISOString().split('T')[0]}">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Time</label>
-                                    <input type="time" class="form-input">
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Event Description</label>
-                                <textarea class="form-input" rows="2" placeholder="What happened?"></textarea>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Witness/Source</label>
-                                <input type="text" class="form-input" placeholder="Who reported this?">
-                            </div>
-                        </div>
-                        <button class="btn btn-sm btn-danger" onclick="removeElement('${eventId}')" style="margin-left: 1rem;">Delete</button>
-                    </div>
-                </div>
-            `;
-            eventsContainer.insertAdjacentHTML('beforeend', eventHtml);
-        }
-
-        function addEvidence() {
-            const evidenceContainer = document.getElementById('evidenceList');
-            
-            const emptyState = evidenceContainer.querySelector('.empty-state');
-            if (emptyState) emptyState.remove();
-
-            const evidenceId = 'evidence_' + Date.now();
-            const evidenceHtml = `
-                <div class="card" id="${evidenceId}" style="margin-bottom: 1rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: start;">
-                        <div style="flex: 1;">
-                            <div class="form-group">
-                                <label class="form-label">Evidence Type</label>
-                                <select class="form-select">
-                                    <option>Photo</option>
-                                    <option>Document</option>
-                                    <option>Witness Statement</option>
-                                    <option>SWMS</option>
-                                    <option>Procedure</option>
-                                    <option>Other</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Description</label>
-                                <input type="text" class="form-input" placeholder="Describe this evidence">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Link/Reference</label>
-                                <input type="text" class="form-input" placeholder="URL or file location">
-                            </div>
-                        </div>
-                        <button class="btn btn-sm btn-danger" onclick="removeElement('${evidenceId}')" style="margin-left: 1rem;">Delete</button>
-                    </div>
-                </div>
-            `;
-            evidenceContainer.insertAdjacentHTML('beforeend', evidenceHtml);
-        }
-
-        function addRecommendation() {
-            const recsContainer = document.getElementById('recommendationsList');
-            
-            const emptyState = recsContainer.querySelector('.empty-state');
-            if (emptyState) emptyState.remove();
-
-            const recId = 'rec_' + Date.now();
-            const recHtml = `
-                <div class="card" id="${recId}" style="margin-bottom: 1rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: start;">
-                        <div style="flex: 1;">
-                            <div class="form-group">
-                                <label class="form-label">Recommendation</label>
-                                <textarea class="form-input" rows="2" placeholder="Describe the corrective action..."></textarea>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label">Priority</label>
-                                    <select class="form-select">
-                                        <option>High</option>
-                                        <option>Medium</option>
-                                        <option>Low</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Responsible</label>
-                                    <input type="text" class="form-input">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Due Date</label>
-                                    <input type="date" class="form-input">
-                                </div>
-                            </div>
-                        </div>
-                        <button class="btn btn-sm btn-danger" onclick="removeElement('${recId}')" style="margin-left: 1rem;">Delete</button>
-                    </div>
-                </div>
-            `;
-            recsContainer.insertAdjacentHTML('beforeend', recHtml);
-        }
-
-        function removeElement(elementId) {
-            const element = document.getElementById(elementId);
-            if (element) element.remove();
-        }
-
-        async function saveICAMInvestigation() {
-            showAlert('ICAM investigation saved successfully!', 'success');
-            closeModal('icamModal');
-            // In production, this would save all ICAM data to Google Sheets
-        }
-
-        // WORKERS COMP FUNCTIONS
-        function showCreateClaimModal() {
-            // Populate incident dropdown
-            const select = document.getElementById('claimIncidentLink');
-            select.innerHTML = '<option value="">Select incident...</option>';
-            allData.incidents.forEach(inc => {
-                select.innerHTML += `<option value="${inc.IncidentID || inc['Incident ID']}">${inc.IncidentID || inc['Incident ID']} - ${inc.Type || inc['Incident Type']}</option>`;
-            });
-            
-            showModal('createClaimModal');
-        }
-
-        async function submitClaim() {
-            const form = document.getElementById('createClaimForm');
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return;
-            }
-
-            const claimData = {
-                'Claim Number': document.getElementById('claimNumber').value,
-                'Incident ID': document.getElementById('claimIncidentLink').value,
-                'Injured Worker': document.getElementById('injuredWorker').value,
-                'Date of Injury': document.getElementById('injuryDate').value,
-                'Body Part': document.getElementById('claimBodyPart').value,
-                'Nature of Injury': document.getElementById('claimNatureOfInjury').value,
-                'Claim Status': document.getElementById('claimStatus').value,
-                'Weekly Benefits': document.getElementById('weeklyBenefits').value || '0',
-                'Medical Costs': document.getElementById('medicalCosts').value || '0',
-                'Days Lost': document.getElementById('daysLost').value || '0',
-                'Claim Lodged Date': new Date().toISOString().split('T')[0],
-                'Timestamp': new Date().toISOString()
-            };
-
-            // Calculate total cost
-            const weeklyBenefits = parseFloat(claimData['Weekly Benefits']) || 0;
-            const medicalCosts = parseFloat(claimData['Medical Costs']) || 0;
-            claimData['Total Claim Cost'] = (weeklyBenefits + medicalCosts).toString();
-
-            try {
-                showAlert('Saving Workers Comp claim...', 'info');
-                
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        type: 'workerscomp',
-                        ...claimData
-                    })
-                });
-
-                // With no-cors mode, we can't check response
-                // Assume success and update UI
-                showAlert('Workers Comp claim created successfully!', 'success');
-                closeModal('createClaimModal');
-                form.reset();
-                
-                // Add to local data immediately
-                allData.workerscomp.push(claimData);
-                updateWorkersCompTable();
-                updateDashboard();
-                
-                // Refresh from server after 2 seconds
-                setTimeout(async () => {
-                    await loadData();
-                }, 2000);
-                
-            } catch (error) {
-                console.error('Error:', error);
-                showAlert('Error creating claim. Please try again.', 'danger');
-            }
-        }
-
-        function showRTWPlanModal(claimNumber) {
-            currentClaimForRTW = claimNumber;
-            showModal('rtwPlanModal');
-        }
-
-        async function saveRTWPlan() {
-            showAlert('RTW Plan saved successfully!', 'success');
-            closeModal('rtwPlanModal');
-            // In production, save RTW plan data to Google Sheets
-        }
-
-        // HAZARD FUNCTIONS
-        function showCreateHazardModal() {
-            showModal('createHazardModal');
-        }
-
-        function calculateRisk() {
-            const likelihood = document.getElementById('hazardLikelihood').value;
-            const consequence = document.getElementById('hazardConsequence').value;
-            
-            if (!likelihood || !consequence) return;
-
-            const likelihoodMap = {'Rare': 1, 'Unlikely': 2, 'Possible': 3, 'Likely': 4, 'Almost Certain': 5};
-            const consequenceMap = {'Insignificant': 1, 'Minor': 2, 'Moderate': 3, 'Major': 4, 'Catastrophic': 5};
-            
-            const likelihoodNum = likelihoodMap[likelihood];
-            const consequenceNum = consequenceMap[consequence];
-            const riskScore = likelihoodNum * consequenceNum;
-
-            let riskRating, alertClass;
-            if (riskScore <= 4) {
-                riskRating = 'Low';
-                alertClass = 'alert-success';
-            } else if (riskScore <= 9) {
-                riskRating = 'Medium';
-                alertClass = 'alert-warning';
-            } else if (riskScore <= 15) {
-                riskRating = 'High';
-                alertClass = 'alert-warning';
-            } else {
-                riskRating = 'Extreme';
-                alertClass = 'alert-danger';
-            }
-
-            document.getElementById('riskRatingDisplay').classList.remove('hidden');
-            document.getElementById('riskAlert').className = 'alert ' + alertClass;
-            document.getElementById('riskRatingText').textContent = riskRating;
-        }
-
-        async function submitHazard() {
-            const form = document.getElementById('createHazardForm');
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return;
-            }
-
-            const hazardData = {
-                Date: document.getElementById('hazardDate').value,
-                Location: document.getElementById('hazardLocation').value,
-                'Hazard Description': document.getElementById('hazardDescription').value,
-                Likelihood: document.getElementById('hazardLikelihood').value,
-                Consequence: document.getElementById('hazardConsequence').value,
-                'Risk Rating': document.getElementById('riskRatingText').textContent,
-                'Recommended Controls': document.getElementById('hazardControls').value,
-                'Reporter Name': document.getElementById('hazardReporter').value,
-                Status: 'Open',
-                Timestamp: new Date().toISOString()
-            };
-
-            try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'submitHazard',
-                        data: hazardData
-                    })
-                });
-
-                if (!response.ok) throw new Error('Failed to submit hazard');
-                
-                showAlert('Hazard created successfully!', 'success');
-                closeModal('createHazardModal');
-                form.reset();
-                await loadData();
-            } catch (error) {
-                console.error('Error:', error);
-                showAlert('Error creating hazard. Please try again.', 'danger');
-            }
-        }
-
-        function viewHazard(hazardId) {
-            showAlert('View hazard details: ' + hazardId, 'info');
-        }
-
-        // ACTION FUNCTIONS
-        function showCreateActionModal() {
-            showModal('createActionModal');
-        }
-
-        async function submitAction() {
-            const form = document.getElementById('createActionForm');
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                return;
-            }
-
-            const actionData = {
-                'Source Type': document.getElementById('actionSource').value,
-                'Action Description': document.getElementById('actionDescription').value,
-                Priority: document.getElementById('actionPriority').value,
-                'Due Date': document.getElementById('actionDueDate').value,
-                'Responsible Person': document.getElementById('actionResponsible').value,
-                Status: document.getElementById('actionStatus').value,
-                'Created Date': new Date().toISOString().split('T')[0]
-            };
-
-            try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'submitCorrectiveAction',
-                        data: actionData
-                    })
-                });
-
-                if (!response.ok) throw new Error('Failed to submit action');
-                
-                showAlert('Corrective Action created successfully!', 'success');
-                closeModal('createActionModal');
-                form.reset();
-                await loadData();
-            } catch (error) {
-                console.error('Error:', error);
-                showAlert('Error creating action. Please try again.', 'danger');
-            }
-        }
-
-        function viewAction(actionId) {
-            showAlert('View action details: ' + actionId, 'info');
-        }
-
-        // SWMS FUNCTIONS
-        function showUploadSWMSModal() {
-            showAlert('SWMS upload functionality - Upload PDF to Google Drive and add reference to SWMS Library sheet', 'info');
-        }
-
-        function viewSWMS(swmsId) {
-            showAlert('View SWMS: ' + swmsId, 'info');
-        }
-
-        function viewInspection(inspId) {
-            showAlert('View inspection: ' + inspId, 'info');
-        }
-
-        // UTILITY FUNCTIONS
-        function formatDate(dateStr) {
-            if (!dateStr) return 'N/A';
-            const date = new Date(dateStr);
-            if (isNaN(date)) return dateStr;
-            return date.toLocaleDateString('en-AU', { year: 'numeric', month: 'short', day: 'numeric' });
-        }
-
-        function getBadgeClass(severity) {
-            const severityLower = (severity || '').toLowerCase();
-            if (severityLower.includes('notifiable') || severityLower.includes('lost time')) return 'badge-danger';
-            if (severityLower.includes('medical')) return 'badge-warning';
-            if (severityLower.includes('first aid')) return 'badge-info';
-            if (severityLower.includes('near miss')) return 'badge-success';
-            return 'badge-info';
-        }
-
-        function getStatusBadgeClass(status) {
-            const statusLower = (status || '').toLowerCase();
-            if (statusLower === 'completed' || statusLower === 'closed') return 'badge-success';
-            if (statusLower === 'in progress') return 'badge-info';
-            if (statusLower === 'open' || statusLower === 'not started') return 'badge-warning';
-            return 'badge-info';
-        }
-
-        function getRiskBadgeClass(risk) {
-            const riskLower = (risk || '').toLowerCase();
-            if (riskLower === 'extreme') return 'badge-danger';
-            if (riskLower === 'high') return 'badge-warning';
-            if (riskLower === 'medium') return 'badge-info';
-            if (riskLower === 'low') return 'badge-success';
-            return 'badge-info';
-        }
-
-        function showAlert(message, type) {
-            // Create temporary alert
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type}`;
-            alertDiv.style.position = 'fixed';
-            alertDiv.style.top = '20px';
-            alertDiv.style.right = '20px';
-            alertDiv.style.zIndex = '10000';
-            alertDiv.style.minWidth = '300px';
-            alertDiv.textContent = message;
-            
-            document.body.appendChild(alertDiv);
-            
-            setTimeout(() => {
-                alertDiv.remove();
-            }, 3000);
+        function downloadReport() {
+            alert('Report PDF download would start here. Connect to PDF generation service.');
         }
     </script>
+
 <!-- ========================================== -->
 <!-- WORKERS COMP DETAIL MODAL -->
 <!-- Paste this BEFORE your closing </body> tag -->
@@ -2967,5 +1619,6 @@ tbody.innerHTML = allData.incidents.map(inc => `
         </div>
     </div>
 </div>
+
 </body>
 </html>
