@@ -421,6 +421,137 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
         
+        /* DETAIL VIEWS */
+        .detail-section {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .detail-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--ksc-primary);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--ksc-accent);
+        }
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        .detail-item {
+            padding: 0.75rem;
+            background: var(--ksc-light);
+            border-radius: 6px;
+        }
+        .detail-label {
+            font-size: 0.75rem;
+            color: var(--ksc-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+        .detail-value {
+            font-size: 0.9375rem;
+            font-weight: 500;
+            color: var(--ksc-primary);
+        }
+        
+        /* STATUS SELECTOR */
+        .status-selector {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .status-selector label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--ksc-primary);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        .status-dropdown {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--ksc-accent);
+            border-radius: 6px;
+            font-size: 0.9375rem;
+            font-weight: 500;
+            color: var(--ksc-primary);
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .status-dropdown:hover {
+            border-color: var(--ksc-primary);
+        }
+        .status-dropdown:focus {
+            outline: none;
+            border-color: var(--ksc-primary);
+            box-shadow: 0 0 0 3px rgba(61, 40, 23, 0.1);
+        }
+        
+        /* NOTES SYSTEM */
+        .notes-section {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .notes-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .notes-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--ksc-primary);
+        }
+        .note-input-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        .note-input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.9375rem;
+        }
+        .note-input:focus {
+            outline: none;
+            border-color: var(--ksc-primary);
+        }
+        .notes-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .note-item {
+            background: var(--ksc-light);
+            border-left: 3px solid var(--ksc-primary);
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-radius: 6px;
+        }
+        .note-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--ksc-secondary);
+            margin-bottom: 0.5rem;
+        }
+        .note-text {
+            font-size: 0.9375rem;
+            color: var(--ksc-primary);
+            line-height: 1.5;
+        }
+        
         /* HIDE/SHOW */
         .hidden { display: none !important; }
         
@@ -2305,7 +2436,7 @@ tbody.innerHTML = allData.incidents.map(inc => `
             }
 
             tbody.innerHTML = allData.workerscomp.map(claim => `
-                <tr>
+                <tr onclick="viewWorkersCompDetail('${claim.ClaimNumber || claim['Claim Number']}')" style="cursor: pointer;">
                     <td><strong>${claim.ClaimNumber || claim['Claim Number'] || 'N/A'}</strong></td>
                     <td>${claim.InjuredWorker || claim['Injured Worker'] || 'N/A'}</td>
                     <td>${formatDate(claim.DateOfInjury || claim['Date of Injury'])}</td>
@@ -2314,7 +2445,8 @@ tbody.innerHTML = allData.incidents.map(inc => `
                     <td>${claim.DaysLost || claim['Days Lost'] || '0'}</td>
                     <td>$${parseFloat(claim.TotalClaimCost || claim['Total Claim Cost'] || 0).toLocaleString()}</td>
                     <td>
-                        <button class="btn btn-sm btn-primary" onclick="showRTWPlanModal('${claim.ClaimNumber || claim['Claim Number']}')">RTW Plan</button>
+                        <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); viewWorkersCompDetail('${claim.ClaimNumber || claim['Claim Number']}')">View</button>
+                        <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation(); showRTWPlanModal('${claim.ClaimNumber || claim['Claim Number']}')" style="margin-left: 0.5rem;">RTW Plan</button>
                     </td>
                 </tr>
             `).join('');
