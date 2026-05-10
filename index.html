@@ -1634,14 +1634,17 @@ document.addEventListener('DOMContentLoaded', function() {
 // ========================================
 
 function viewWorkersCompDetail(claimNumber) {
-    console.log('Looking for claim:', claimNumber);
+    console.log('Looking for claim:', claimNumber, typeof claimNumber);
     console.log('All workers comp data:', allData.workerscomp);
+    
+    // Convert to string for comparison (Google Sheets might return numbers)
+    const searchNumber = String(claimNumber);
     
     // Find the claim in allData
     const claim = allData.workerscomp.find(c => {
-        const sheetClaimNumber = c['Claim Number'] || c.ClaimNumber;
-        console.log('Comparing:', sheetClaimNumber, 'with', claimNumber);
-        return sheetClaimNumber === claimNumber;
+        const sheetClaimNumber = String(c['Claim Number'] || c.ClaimNumber);
+        console.log('Comparing:', sheetClaimNumber, 'with', searchNumber);
+        return sheetClaimNumber === searchNumber;
     });
     
     console.log('Found claim:', claim);
@@ -1655,7 +1658,7 @@ function viewWorkersCompDetail(claimNumber) {
     
     // Update modal title
     document.getElementById('wcDetailTitle').textContent = 
-        `Workers Comp Claim: ${claimNumber}`;
+        `Workers Comp Claim: ${searchNumber}`;
     
     // Populate summary
     const summary = document.getElementById('wcDetailSummary');
@@ -1707,7 +1710,7 @@ function viewWorkersCompDetail(claimNumber) {
     document.getElementById('wcStatusDropdown').value = currentStatus;
     
     // Render notes
-    renderWCNotes(claimNumber);
+    renderWCNotes(searchNumber);
     
     // Show modal
     showModal('workersCompDetailModal');
@@ -2835,10 +2838,11 @@ tbody.innerHTML = allData.incidents.map(inc => `
         });
         
         function showRTWPlanModal(claimNumber) {
-            currentClaimForRTW = claimNumber;
+            // Convert to string for consistency
+            currentClaimForRTW = String(claimNumber);
             
             // Load existing RTW plan if it exists
-            const existingPlan = rtwPlans[claimNumber];
+            const existingPlan = rtwPlans[currentClaimForRTW];
             
             if (existingPlan) {
                 // Populate form with existing data
