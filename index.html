@@ -443,6 +443,8 @@
             }
         }
     </style>
+    <!-- jsPDF Library for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
     <!-- HEADER -->
@@ -811,6 +813,8 @@
                                 <option value="Lost Time Injury">Lost Time Injury</option>
                                 <option value="Medical Treatment">Medical Treatment</option>
                                 <option value="First Aid">First Aid</option>
+                                <option value="Psychological Injury">Psychological Injury</option>
+                                <option value="No Treatment Required - Report Only">No Treatment Required - Report Only</option>
                                 <option value="Near Miss">Near Miss</option>
                             </select>
                         </div>
@@ -1793,6 +1797,12 @@ function updateIncidentStatus() {
 function exportWCPDF() {
     if (!currentWCClaim) return;
     
+    // Check if jsPDF is loaded
+    if (!window.jspdf) {
+        showAlert('PDF library is still loading. Please try again in a moment.', 'warning');
+        return;
+    }
+    
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
@@ -1874,6 +1884,12 @@ function exportWCPDF() {
 
 function exportIncidentPDF() {
     if (!currentIncidentId) return;
+    
+    // Check if jsPDF is loaded
+    if (!window.jspdf) {
+        showAlert('PDF library is still loading. Please try again in a moment.', 'warning');
+        return;
+    }
     
     const incident = allData.incidents.find(inc => 
         (inc['Incident ID'] || inc.IncidentID) === currentIncidentId
